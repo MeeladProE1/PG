@@ -115,7 +115,8 @@
             velocity: new THREE.Vector3(), canJump: false, lastNetSend: 0,
             totalCoins: 0, highScore: 0, currentScore: 0,
             unlockedColors: ['#00ffff'], equippedColor: '#00ffff',
-            lastSentPos: new THREE.Vector3(), lastSentYaw: 0
+            lastSentPos: new THREE.Vector3(), lastSentYaw: 0,
+            lastCheckpoint: new THREE.Vector3(0, 5, 0) // Track last black platform position
         };
 
         const shopItems = [
@@ -272,7 +273,9 @@
 
         levelData.forEach(d => {
             const m = new THREE.Mesh(new THREE.BoxGeometry(d.s[0], d.s[1], d.s[2]), new THREE.MeshStandardMaterial({ color: d.c, roughness: 0.1, metalness: 0.5, emissive: d.c === 0x222222 ? 0 : d.c, emissiveIntensity: 0.4 }));
-            m.position.set(d.p[0], d.p[1], d.p[2]); m.receiveShadow = true; m.castShadow = true; scene.add(m); platforms.push(new THREE.Box3().setFromObject(m));
+            m.position.set(d.p[0], d.p[1], d.p[2]); m.receiveShadow = true; m.castShadow = true; scene.add(m); 
+            // Save if this platform is a checkpoint
+            platforms.push({ box: new THREE.Box3().setFromObject(m), isCheckpoint: d.c === 0x222222 });
             if(d.c !== 0x222222) {
                 const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.3), new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xffaa00 }));
                 c.position.set(d.p[0], d.p[1] + 1.5, d.p[2]); scene.add(c); collectibles.push({ mesh: c, active: true, startY: d.p[1] + 1.5 });
@@ -285,10 +288,18 @@
             playerBox.min.set(pos.x - config.playerSize.w/2 + pad, pos.y - config.playerSize.h/2 + yPad, pos.z - config.playerSize.d/2 + pad);
             playerBox.max.set(pos.x + config.playerSize.w/2 - pad, pos.y + config.playerSize.h/2 - yPad, pos.z + config.playerSize.d/2 - pad);
             for(let p of platforms) {
-                if(playerBox.intersectsBox(p)) {
-                    if(axis === 'y') { if(state.velocity.y < 0) { pos.y = p.max.y + config.playerSize.h/2; state.canJump = true; } else if(state.velocity.y > 0) pos.y = p.min.y - config.playerSize.h/2; state.velocity.y = 0; }
-                    else if(axis === 'x') { pos.x = state.velocity.x > 0 ? p.min.x - config.playerSize.w/2 : p.max.x + config.playerSize.w/2; state.velocity.x = 0; }
-                    else if(axis === 'z') { pos.z = state.velocity.z > 0 ? p.min.z - config.playerSize.d/2 : p.max.z + config.playerSize.d/2; state.velocity.z = 0; }
+                if(playerBox.intersectsBox(p.box)) {
+                    if(axis === 'y') { 
+                        if(state.velocity.y < 0) { 
+                            pos.y = p.box.max.y + config.playerSize.h/2; 
+                            state.canJump = true; 
+                            // Set checkpoint when landing on a black platform
+                            if(p.isCheckpoint) state.lastCheckpoint.copy(pos);
+                        } else if(state.velocity.y > 0) pos.y = p.box.min.y - config.playerSize.h/2; 
+                        state.velocity.y = 0; 
+                    }
+                    else if(axis === 'x') { pos.x = state.velocity.x > 0 ? p.box.min.x - config.playerSize.w/2 : p.box.max.x + config.playerSize.w/2; state.velocity.x = 0; }
+                    else if(axis === 'z') { pos.z = state.velocity.z > 0 ? p.box.min.z - config.playerSize.d/2 : p.box.max.z + config.playerSize.d/2; state.velocity.z = 0; }
                     return true;
                 }
             }
@@ -325,9 +336,16 @@
                         }
                     }
                 });
-                if (camera.position.y < -10) { state.currentScore = 0; updateHUDStats(); collectibles.forEach(c=>{c.active=true;c.mesh.visible=true;}); camera.position.set(0,5,0); state.velocity.set(0,0,0); }
+                // Check fall distance
+                if (camera.position.y < -10) { 
+                    state.currentScore = 0; updateHUDStats(); 
+                    collectibles.forEach(c=>{c.active=true;c.mesh.visible=true;}); 
+                    // Respawn at last checkpoint
+                    camera.position.copy(state.lastCheckpoint); 
+                    state.velocity.set(0,0,0); 
+                }
 
-                // Optimized Networking: Only send if moved or timed out
+                // Optimized Networking
                 if (connections.length > 0 && peer) {
                     const now = Date.now();
                     const moved = camera.position.distanceTo(state.lastSentPos) > 0.05 || Math.abs(state.yaw - state.lastSentYaw) > 0.05;
@@ -360,10 +378,15 @@
             ['menu-login', 'menu-home', 'menu-multi', 'menu-shop'].forEach(m => document.getElementById(m).classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden'); if(id !== 'menu-shop') document.getElementById(id).classList.add('flex');
         }
-        function startGame(m) { document.getElementById('ui-layer').classList.add('hidden'); document.getElementById('hud').classList.remove('hidden'); state.isPlaying = true; if(m==='multi'){document.getElementById('peer-id-display').classList.remove('hidden');document.getElementById('leaderboard').classList.remove('hidden');updateLeaderboard();}}
+        function startGame(m) { 
+            document.getElementById('ui-layer').classList.add('hidden'); 
+            document.getElementById('hud').classList.remove('hidden'); 
+            state.isPlaying = true; 
+            state.lastCheckpoint.set(0, 5, 0); // Reset checkpoint to start for new game
+            if(m==='multi'){document.getElementById('peer-id-display').classList.remove('hidden');document.getElementById('leaderboard').classList.remove('hidden');updateLeaderboard();}}
         function pauseGame() { state.isPlaying = false; document.getElementById('pause-menu').classList.remove('hidden'); document.getElementById('pause-menu').classList.add('flex'); }
         function resumeGame() { state.isPlaying = true; document.getElementById('pause-menu').classList.add('hidden'); state.keys = {}; }
-        function quitGame() { location.reload(); } // Safest cleanup
+        function quitGame() { location.reload(); }
 
         window.addEventListener('keydown', (e) => { if (e.key === 'Escape') pauseGame(); if(state.isPlaying) state.keys[e.key.toLowerCase()] = true; });
         window.addEventListener('keyup', (e) => { state.keys[e.key.toLowerCase()] = false; });
