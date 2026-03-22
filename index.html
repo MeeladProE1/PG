@@ -135,7 +135,7 @@
             baseGravity: -35, 
             baseJumpForce: 18, 
             baseMoveSpeed: 12, 
-            playerSize: { w: 0.6, h: 1.2, d: 0.6 } 
+            playerSize: { w: 0.4, h: 0.4, d: 0.4 } // Reduced player size for a "small cube"
         };
 
         const state = {
@@ -362,12 +362,23 @@
             const g = new THREE.Group(); const color = new THREE.Color(cHex);
             const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2, metalness: 0.8 });
             const glowMat = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 1.5 });
-            const boxGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+            
+            // Fixed size small cube for the player mesh
+            const size = 0.4;
+            const boxGeo = new THREE.BoxGeometry(size, size, size);
             const cube = new THREE.Mesh(boxGeo, darkMat); cube.castShadow = true;
+            
+            // EdgesGeometry for a clean normal cube outline without diagonals
             const edges = new THREE.LineSegments(new THREE.EdgesGeometry(boxGeo), new THREE.LineBasicMaterial({ color: color }));
             cube.add(edges);
-            const v = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.1), glowMat); v.position.set(0, 0.1, -0.3); cube.add(v);
-            g.add(cube); g.userData = { innerCube: cube, roll: 0, lastY: 0, glowMat, edgesMat: edges.material };
+            
+            // Simplified "face" indicator
+            const v = new THREE.Mesh(new THREE.BoxGeometry(size * 0.6, size * 0.2, size * 0.1), glowMat); 
+            v.position.set(0, size * 0.15, -(size/2)); 
+            cube.add(v);
+            
+            g.add(cube);
+            g.userData = { innerCube: cube, lastY: 0, glowMat, edgesMat: edges.material };
             return g;
         }
         function updateOtherPlayer(d) {
@@ -487,16 +498,15 @@
             }
 
             for(let id in otherPlayers) {
-                const p = otherPlayers[id]; const dist = Math.hypot(p.targetPos.x - p.mesh.position.x, p.targetPos.z - p.mesh.position.z);
-                p.mesh.position.lerp(p.targetPos, 0.15); p.mesh.rotation.y += (p.targetYaw - p.mesh.rotation.y) * 0.15;
+                const p = otherPlayers[id]; 
+                p.mesh.position.lerp(p.targetPos, 0.15); 
+                p.mesh.rotation.y += (p.targetYaw - p.mesh.rotation.y) * 0.15;
+                
                 const ud = p.mesh.userData;
-                if (dist > 0.02) { ud.roll -= dist * 3; ud.innerCube.rotation.x = ud.roll; }
-                const dy = p.mesh.position.y - ud.lastY;
-                if (Math.abs(dy) > 0.05) ud.innerCube.scale.lerp(new THREE.Vector3(0.8, 1.3, 0.8), 0.2);
-                else ud.innerCube.scale.lerp(new THREE.Vector3(1, 1, 1), 0.2);
-                ud.lastY = p.mesh.position.y;
+                // Removed rolling/stretching animations as requested
+                
                 if (p.nameTag) {
-                    const sp = p.mesh.position.clone(); sp.y += 0.8; sp.project(camera);
+                    const sp = p.mesh.position.clone(); sp.y += 0.5; sp.project(camera);
                     if (sp.z > 1) p.nameTag.style.display = 'none';
                     else { p.nameTag.style.display = 'block'; p.nameTag.style.left = `${(sp.x*0.5+0.5)*window.innerWidth}px`; p.nameTag.style.top = `${(sp.y*-0.5+0.5)*window.innerHeight}px`; }
                 }
