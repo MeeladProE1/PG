@@ -80,14 +80,27 @@
                 <button onclick="showMenu('menu-home')" class="py-2 px-6 rounded-lg font-bold bg-gray-600 hover:bg-gray-500 transition-all mt-4 border border-gray-500 text-xs">Back</button>
             </div>
 
-            <div id="menu-multi" class="hidden flex-col gap-4">
-                <button onclick="hostGame()" class="py-3 px-6 rounded-lg font-bold border border-purple-400 text-purple-300 hover:bg-purple-400/20 transition-all">Host Room</button>
-                <div class="flex gap-2">
-                    <input type="text" id="join-id" placeholder="Enter Host ID" class="w-full bg-black/50 border border-purple-500 rounded-lg px-4 py-2 text-white outline-none focus:border-cyan-400">
-                    <button onclick="joinGame()" class="py-2 px-4 rounded-lg font-bold bg-purple-600 hover:bg-purple-500 transition-all">Join</button>
+            <div id="menu-multi" class="hidden flex-col gap-4 text-left">
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-purple-400">Host Room</label>
+                    <div class="flex gap-2 mt-1">
+                        <input type="text" id="host-room-id" placeholder="Enter Room Name" class="w-full bg-black/50 border border-purple-500 rounded-lg px-4 py-2 text-white outline-none focus:border-cyan-400">
+                        <button onclick="hostGame()" class="py-2 px-4 rounded-lg font-bold bg-purple-600 hover:bg-purple-500 transition-all whitespace-nowrap">Host</button>
+                    </div>
                 </div>
-                <div id="mp-status" class="text-sm text-cyan-300 min-h-[1.5rem]"></div>
-                <button onclick="showMenu('menu-home')" class="text-sm text-gray-400 hover:text-white mt-2">← Back</button>
+
+                <div class="border-t border-white/10 my-2"></div>
+
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-cyan-400">Join Room</label>
+                    <div class="flex gap-2 mt-1">
+                        <input type="text" id="join-id" placeholder="Enter Room Name" class="w-full bg-black/50 border border-cyan-500 rounded-lg px-4 py-2 text-white outline-none focus:border-cyan-400">
+                        <button onclick="joinGame()" class="py-2 px-4 rounded-lg font-bold bg-cyan-600 hover:bg-cyan-500 transition-all whitespace-nowrap">Join</button>
+                    </div>
+                </div>
+
+                <div id="mp-status" class="text-xs text-center text-cyan-300 min-h-[1.5rem] mt-2 italic"></div>
+                <button onclick="showMenu('menu-home')" class="w-full text-sm text-gray-400 hover:text-white mt-2">← Back</button>
             </div>
         </div>
     </div>
@@ -110,6 +123,11 @@
             <div class="text-white font-bold"><span class="text-purple-400 mr-2">Score:</span><span id="hud-score">0</span></div>
         </div>
         
+        <!-- Controls Tip -->
+        <div class="absolute top-4 left-4 text-[10px] text-white/50 bg-black/30 px-2 py-1 rounded">
+            F5: Toggle View
+        </div>
+
         <!-- Chat Area -->
         <div id="chat-box" class="absolute bottom-4 left-4 w-64 md:w-80 pointer-events-auto flex flex-col gap-2">
             <div id="chat-log" class="max-h-40 overflow-y-auto bg-black/40 rounded border border-cyan-500/20 p-2 text-xs flex flex-col gap-1 transition-opacity duration-300 opacity-0">
@@ -135,7 +153,7 @@
             baseGravity: -35, 
             baseJumpForce: 18, 
             baseMoveSpeed: 12, 
-            playerSize: { w: 0.4, h: 0.4, d: 0.4 } // Reduced player size for a "small cube"
+            playerSize: { w: 0.4, h: 0.4, d: 0.4 } 
         };
 
         const state = {
@@ -147,7 +165,9 @@
             lastSentPos: new THREE.Vector3(), lastSentYaw: 0,
             lastCheckpoint: new THREE.Vector3(0, 5, 0),
             shopTab: 'colors',
-            isChatting: false
+            isChatting: false,
+            viewMode: 'first', // 'first' or 'third'
+            playerPosition: new THREE.Vector3(0, 5, 0)
         };
 
         const shopItems = [
@@ -190,7 +210,6 @@
             log.appendChild(msgDiv);
             log.scrollTop = log.scrollHeight;
             
-            // Fade out after a few seconds of inactivity
             clearTimeout(log.fadeTimeout);
             log.fadeTimeout = setTimeout(() => {
                 if (!state.isChatting) log.style.opacity = '0.5';
@@ -208,7 +227,7 @@
             input.value = '';
             input.blur();
             state.isChatting = false;
-            state.keys = {}; // Clear keys to prevent sticking
+            state.keys = {}; 
         }
 
         // --- SAVE SYSTEM ---
@@ -308,31 +327,44 @@
             }
         }
 
-        function buyColor(c, p) { if(state.totalCoins >= p) { state.totalCoins -= p; state.unlockedColors.push(c); state.equippedColor = c; saveData(); renderShop(); updateMenuStats(); } }
-        function equipColor(c) { state.equippedColor = c; saveData(); renderShop(); }
+        function buyColor(c, p) { if(state.totalCoins >= p) { state.totalCoins -= p; state.unlockedColors.push(c); state.equippedColor = c; saveData(); renderShop(); updateMenuStats(); updateLocalPlayerMesh(); } }
+        function equipColor(c) { state.equippedColor = c; saveData(); renderShop(); updateLocalPlayerMesh(); }
         function buyUpgrade(type, price) { if (state.totalCoins >= price) { state.totalCoins -= price; if (type === 'speed') state.speedLevel++; else if (type === 'jump') state.jumpLevel++; saveData(); renderShop(); updateMenuStats(); } }
 
         // --- MULTIPLAYER ---
         let peer = null, connections = [], isHost = false, otherPlayers = {};
-        function generateShortId() { return Math.floor(10000 + Math.random() * 90000).toString(); }
-        function updateLeaderboard() {
-            const list = document.getElementById('leaderboard-list');
-            list.innerHTML = `<li class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${state.equippedColor}"></div>${state.playerName}</li>`;
-            for (let id in otherPlayers) list.innerHTML += `<li class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${otherPlayers[id].lastColor}"></div>${otherPlayers[id].nameTag.innerText}</li>`;
-        }
+        
         function hostGame() {
             if (peer) return;
-            peer = new Peer(generateShortId()); isHost = true;
+            const roomId = document.getElementById('host-room-id').value.trim();
+            if(!roomId) {
+                document.getElementById('mp-status').innerText = "Please enter a room name!";
+                return;
+            }
+            document.getElementById('mp-status').innerText = "Connecting to relay...";
+            peer = new Peer(roomId); 
+            isHost = true;
             peer.on('open', (id) => { 
                 document.getElementById('peer-id-display').innerHTML = `<span class="text-cyan-500 uppercase text-[8px] tracking-widest">Room Name</span><span>${id}</span>`; 
-                document.getElementById('mp-status').innerHTML = `Lobby ID: <span class="text-white font-mono">${id}</span>`; 
+                document.getElementById('mp-status').innerHTML = `Room active: <span class="text-white font-mono font-bold">${id}</span>`; 
                 addChatMessage("System", `Lobby created! Room: ${id}`, "#ffff00");
+                setTimeout(() => startGame('multi'), 500);
             });
-            peer.on('connection', (c) => { connections.push(c); setupConnection(c); if (!state.isPlaying) setTimeout(() => startGame('multi'), 500); });
+            peer.on('connection', (c) => { connections.push(c); setupConnection(c); });
+            peer.on('error', (err) => {
+                if(err.type === 'unavailable-id') {
+                    document.getElementById('mp-status').innerText = "Room name already taken!";
+                } else {
+                    document.getElementById('mp-status').innerText = "Error: " + err.type;
+                }
+                peer = null;
+            });
         }
+
         function joinGame() {
             const hostId = document.getElementById('join-id').value.trim();
             if (!hostId || peer) return;
+            document.getElementById('mp-status').innerText = "Finding room...";
             peer = new Peer(); isHost = false;
             peer.on('open', () => { 
                 const c = peer.connect(hostId); 
@@ -343,8 +375,18 @@
                     setTimeout(() => startGame('multi'), 500); 
                     addChatMessage("System", "Connected to Room: " + hostId, "#00ff00"); 
                 }); 
+                c.on('error', () => {
+                    document.getElementById('mp-status').innerText = "Room not found!";
+                    peer.destroy();
+                    peer = null;
+                });
+            });
+            peer.on('error', (err) => {
+                document.getElementById('mp-status').innerText = "Could not join!";
+                peer = null;
             });
         }
+
         function setupConnection(c) {
             c.on('data', (d) => {
                 if (d.type === 'state') { updateOtherPlayer(d); if (isHost) broadcast(d, c.peer); }
@@ -356,31 +398,27 @@
             });
             c.on('close', () => { connections = connections.filter(con => con.peer !== c.peer); removePlayer(c.peer); if (isHost) broadcast({ type: 'disconnect', id: c.peer }); });
         }
+
         function broadcast(d, skip = null) { connections.forEach(c => { if (c.open && c.peer !== skip) c.send(d); }); }
         function removePlayer(id) { if (otherPlayers[id]) { scene.remove(otherPlayers[id].mesh); otherPlayers[id].nameTag.remove(); delete otherPlayers[id]; updateLeaderboard(); } }
+        
         function createPlayerMesh(cHex) {
             const g = new THREE.Group(); const color = new THREE.Color(cHex);
             const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2, metalness: 0.8 });
             const glowMat = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 1.5 });
-            
-            // Fixed size small cube for the player mesh
-            const size = 0.4;
+            const size = config.playerSize.w;
             const boxGeo = new THREE.BoxGeometry(size, size, size);
             const cube = new THREE.Mesh(boxGeo, darkMat); cube.castShadow = true;
-            
-            // EdgesGeometry for a clean normal cube outline without diagonals
             const edges = new THREE.LineSegments(new THREE.EdgesGeometry(boxGeo), new THREE.LineBasicMaterial({ color: color }));
             cube.add(edges);
-            
-            // Simplified "face" indicator
             const v = new THREE.Mesh(new THREE.BoxGeometry(size * 0.6, size * 0.2, size * 0.1), glowMat); 
             v.position.set(0, size * 0.15, -(size/2)); 
             cube.add(v);
-            
             g.add(cube);
-            g.userData = { innerCube: cube, lastY: 0, glowMat, edgesMat: edges.material };
+            g.userData = { innerCube: cube, glowMat, edgesMat: edges.material };
             return g;
         }
+
         function updateOtherPlayer(d) {
             const cHex = d.color || '#00ffff';
             if (!otherPlayers[d.id]) {
@@ -390,10 +428,19 @@
                 tag.innerText = d.name || 'Player'; document.getElementById('name-tags-container').appendChild(tag);
                 otherPlayers[d.id] = { mesh: m, targetPos: new THREE.Vector3(d.x, d.y, d.z), targetYaw: d.yaw, nameTag: tag, lastColor: cHex };
                 updateLeaderboard();
-                addChatMessage("System", `${d.name} joined the game.`, "#00ffff");
+                addChatMessage("System", `${d.name} joined.`, "#00ffff");
             }
             const p = otherPlayers[d.id]; p.targetPos.set(d.x, d.y, d.z); p.targetYaw = d.yaw;
             if (p.lastColor !== cHex) { const c = new THREE.Color(cHex); p.mesh.userData.glowMat.color.copy(c); p.mesh.userData.glowMat.emissive.copy(c); p.mesh.userData.edgesMat.color.copy(c); p.lastColor = cHex; updateLeaderboard(); }
+        }
+
+        // --- LOCAL PLAYER MESH ---
+        let localPlayerMesh = null;
+        function updateLocalPlayerMesh() {
+            if(localPlayerMesh) scene.remove(localPlayerMesh);
+            localPlayerMesh = createPlayerMesh(state.equippedColor);
+            localPlayerMesh.visible = state.viewMode === 'third';
+            scene.add(localPlayerMesh);
         }
 
         // --- THREE.JS ---
@@ -456,7 +503,7 @@
                 const ts = state.sensitivity * 2 * dt;
                 if (state.keys['arrowleft']) state.yaw += ts; if (state.keys['arrowright']) state.yaw -= ts;
                 if (state.keys['arrowup']) state.pitch += ts; if (state.keys['arrowdown']) state.pitch -= ts;
-                state.pitch = Math.max(-1.5, Math.min(1.5, state.pitch)); camera.rotation.set(state.pitch, state.yaw, 0, 'YXZ');
+                state.pitch = Math.max(-1.5, Math.min(1.5, state.pitch)); 
                 
                 const d = new THREE.Vector3();
                 if (state.keys['w']) d.z -= 1; if (state.keys['s']) d.z += 1; if (state.keys['a']) d.x -= 1; if (state.keys['d']) d.x += 1;
@@ -468,31 +515,49 @@
                 if (state.keys[' '] && state.canJump) { state.velocity.y = currentJumpForce; state.canJump = false; }
                 state.velocity.y += config.baseGravity * dt;
                 
-                const next = camera.position.clone(); state.canJump = false;
-                next.y += state.velocity.y * dt; checkCollisions(next, 'y'); camera.position.y = next.y;
-                next.x += state.velocity.x * dt; checkCollisions(next, 'x'); camera.position.x = next.x;
-                next.z += state.velocity.z * dt; checkCollisions(next, 'z'); camera.position.z = next.z;
+                const next = state.playerPosition.clone(); state.canJump = false;
+                next.y += state.velocity.y * dt; checkCollisions(next, 'y'); state.playerPosition.y = next.y;
+                next.x += state.velocity.x * dt; checkCollisions(next, 'x'); state.playerPosition.x = next.x;
+                next.z += state.velocity.z * dt; checkCollisions(next, 'z'); state.playerPosition.z = next.z;
                 
+                // Update Camera & Local Player
+                if(state.viewMode === 'first') {
+                    camera.position.copy(state.playerPosition);
+                    camera.rotation.set(state.pitch, state.yaw, 0, 'YXZ');
+                    if(localPlayerMesh) localPlayerMesh.visible = false;
+                } else {
+                    // Third person follow logic
+                    const offset = new THREE.Vector3(0, 1, 3);
+                    offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), state.yaw);
+                    camera.position.copy(state.playerPosition).add(offset);
+                    camera.lookAt(state.playerPosition);
+                    if(localPlayerMesh) {
+                        localPlayerMesh.visible = true;
+                        localPlayerMesh.position.copy(state.playerPosition);
+                        localPlayerMesh.rotation.y = state.yaw;
+                    }
+                }
+
                 collectibles.forEach(c => {
                     if (c.active) {
                         c.mesh.rotation.y += dt * 3; c.mesh.position.y = c.startY + Math.sin(Date.now()*0.005)*0.2;
-                        if (camera.position.distanceTo(c.mesh.position) < 1.2) {
+                        if (state.playerPosition.distanceTo(c.mesh.position) < 1.2) {
                             c.active = false; c.mesh.visible = false; state.currentScore += 100; state.totalCoins += 1;
                             if (state.currentScore > state.highScore) state.highScore = state.currentScore; saveData(); updateHUDStats();
                         }
                     }
                 });
                 
-                if (camera.position.y < -10) { 
-                    state.currentScore = 0; updateHUDStats(); collectibles.forEach(c=>{c.active=true;c.mesh.visible=true;}); camera.position.copy(state.lastCheckpoint); state.velocity.set(0,0,0); 
+                if (state.playerPosition.y < -10) { 
+                    state.currentScore = 0; updateHUDStats(); collectibles.forEach(c=>{c.active=true;c.mesh.visible=true;}); state.playerPosition.copy(state.lastCheckpoint); state.velocity.set(0,0,0); 
                 }
 
                 if (connections.length > 0 && peer) {
                     const now = Date.now();
-                    const moved = camera.position.distanceTo(state.lastSentPos) > 0.05 || Math.abs(state.yaw - state.lastSentYaw) > 0.05;
+                    const moved = state.playerPosition.distanceTo(state.lastSentPos) > 0.05 || Math.abs(state.yaw - state.lastSentYaw) > 0.05;
                     if (now - state.lastNetSend > 50 && moved) {
-                        broadcast({ type: 'state', id: peer.id, name: state.playerName, color: state.equippedColor, x: camera.position.x, y: camera.position.y, z: camera.position.z, yaw: state.yaw });
-                        state.lastNetSend = now; state.lastSentPos.copy(camera.position); state.lastSentYaw = state.yaw;
+                        broadcast({ type: 'state', id: peer.id, name: state.playerName, color: state.equippedColor, x: state.playerPosition.x, y: state.playerPosition.y, z: state.playerPosition.z, yaw: state.yaw });
+                        state.lastNetSend = now; state.lastSentPos.copy(state.playerPosition); state.lastSentYaw = state.yaw;
                     }
                 }
             }
@@ -501,10 +566,6 @@
                 const p = otherPlayers[id]; 
                 p.mesh.position.lerp(p.targetPos, 0.15); 
                 p.mesh.rotation.y += (p.targetYaw - p.mesh.rotation.y) * 0.15;
-                
-                const ud = p.mesh.userData;
-                // Removed rolling/stretching animations as requested
-                
                 if (p.nameTag) {
                     const sp = p.mesh.position.clone(); sp.y += 0.5; sp.project(camera);
                     if (sp.z > 1) p.nameTag.style.display = 'none';
@@ -516,14 +577,48 @@
 
         function showMenu(id) {
             ['menu-login', 'menu-home', 'menu-multi', 'menu-shop'].forEach(m => document.getElementById(m).classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden'); if(id !== 'menu-shop') document.getElementById(id).classList.add('flex');
+            const target = document.getElementById(id);
+            target.classList.remove('hidden'); 
+            if(id !== 'menu-shop') target.classList.add('flex');
         }
-        function startGame(m) { document.getElementById('ui-layer').classList.add('hidden'); document.getElementById('hud').classList.remove('hidden'); state.isPlaying = true; state.lastCheckpoint.set(0, 5, 0); if(m==='multi'){document.getElementById('peer-id-display').classList.remove('hidden');document.getElementById('leaderboard').classList.remove('hidden');updateLeaderboard();}}
+
+        function startGame(m) { 
+            // Cleanup networking if it was somehow active
+            if(m === 'single' && peer) {
+                peer.destroy();
+                peer = null;
+                connections = [];
+            }
+            
+            document.getElementById('ui-layer').classList.add('hidden'); 
+            document.getElementById('hud').classList.remove('hidden'); 
+            state.isPlaying = true; 
+            state.lastCheckpoint.set(0, 5, 0); 
+            state.playerPosition.set(0, 5, 0);
+            updateLocalPlayerMesh();
+            
+            if(m==='multi'){
+                document.getElementById('peer-id-display').classList.remove('hidden');
+                document.getElementById('leaderboard').classList.remove('hidden');
+                updateLeaderboard();
+            } else {
+                document.getElementById('peer-id-display').classList.add('hidden');
+                document.getElementById('leaderboard').classList.add('hidden');
+            }
+        }
+
         function pauseGame() { state.isPlaying = false; document.getElementById('pause-menu').classList.remove('hidden'); document.getElementById('pause-menu').classList.add('flex'); }
         function resumeGame() { state.isPlaying = true; document.getElementById('pause-menu').classList.add('hidden'); state.keys = {}; }
         function quitGame() { location.reload(); }
 
         window.addEventListener('keydown', (e) => { 
+            if (e.key === 'F5') {
+                e.preventDefault(); // Stop page refresh
+                if(state.isPlaying) {
+                    state.viewMode = state.viewMode === 'first' ? 'third' : 'first';
+                    if(localPlayerMesh) localPlayerMesh.visible = (state.viewMode === 'third');
+                }
+            }
             if (e.key === 'Escape') {
                 if (state.isChatting) {
                     document.getElementById('chat-input').blur();
@@ -548,6 +643,7 @@
         window.addEventListener('keyup', (e) => { state.keys[e.key.toLowerCase()] = false; });
         document.getElementById('sensitivity-slider').addEventListener('input', (e) => { state.sensitivity = parseFloat(e.target.value); saveData(); });
         window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+        
         animate();
     </script>
 </body>
