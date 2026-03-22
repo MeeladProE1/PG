@@ -18,6 +18,7 @@
         ::-webkit-scrollbar-thumb { background: #00ffff; border-radius: 4px; }
         #chat-log::-webkit-scrollbar { width: 4px; }
         #chat-log::-webkit-scrollbar-thumb { background: rgba(0, 255, 255, 0.3); }
+        .no-select { user-select: none; }
     </style>
 </head>
 <body class="text-white">
@@ -81,21 +82,30 @@
             </div>
 
             <div id="menu-multi" class="hidden flex-col gap-4 text-left">
-                <div>
-                    <label class="text-[10px] uppercase font-bold text-purple-400">Host Room</label>
-                    <div class="flex gap-2 mt-1">
-                        <input type="text" id="host-room-id" placeholder="Enter Room Name" class="w-full bg-black/50 border border-purple-500 rounded-lg px-4 py-2 text-white outline-none focus:border-cyan-400">
-                        <button onclick="hostGame()" class="py-2 px-4 rounded-lg font-bold bg-purple-600 hover:bg-purple-500 transition-all whitespace-nowrap">Host</button>
+                <div class="max-h-[60vh] overflow-y-auto flex flex-col gap-4 pr-2">
+                    <div>
+                        <label class="text-[10px] uppercase font-bold text-purple-400">Host Room</label>
+                        <div class="flex gap-2 mt-1">
+                            <input type="text" id="host-room-id" placeholder="Room Name" class="w-full bg-black/50 border border-purple-500 rounded-lg px-4 py-2 text-white outline-none focus:border-cyan-400">
+                            <button onclick="hostGame()" class="py-2 px-4 rounded-lg font-bold bg-purple-600 hover:bg-purple-500 transition-all whitespace-nowrap">Host</button>
+                        </div>
                     </div>
-                </div>
 
-                <div class="border-t border-white/10 my-2"></div>
+                    <div class="border-t border-white/10"></div>
 
-                <div>
-                    <label class="text-[10px] uppercase font-bold text-cyan-400">Join Room</label>
-                    <div class="flex gap-2 mt-1">
-                        <input type="text" id="join-id" placeholder="Enter Room Name" class="w-full bg-black/50 border border-cyan-500 rounded-lg px-4 py-2 text-white outline-none focus:border-cyan-400">
-                        <button onclick="joinGame()" class="py-2 px-4 rounded-lg font-bold bg-cyan-600 hover:bg-cyan-500 transition-all whitespace-nowrap">Join</button>
+                    <div>
+                        <label class="text-[10px] uppercase font-bold text-cyan-400">Join Room</label>
+                        <div class="flex gap-2 mt-1">
+                            <input type="text" id="join-id" placeholder="Room Name" class="w-full bg-black/50 border border-cyan-500 rounded-lg px-4 py-2 text-white outline-none focus:border-cyan-400">
+                            <button onclick="joinGame()" class="py-2 px-4 rounded-lg font-bold bg-cyan-600 hover:bg-cyan-500 transition-all whitespace-nowrap">Join</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] uppercase font-bold text-yellow-400">Famous Rooms</label>
+                        <div class="grid grid-cols-2 gap-2 mt-1" id="famous-rooms">
+                            <!-- Populated by script -->
+                        </div>
                     </div>
                 </div>
 
@@ -124,7 +134,7 @@
         </div>
         
         <!-- Controls Tip -->
-        <div class="absolute top-4 left-4 text-[10px] text-white/50 bg-black/30 px-2 py-1 rounded">
+        <div class="absolute top-4 left-4 mt-12 text-[10px] text-white/50 bg-black/30 px-2 py-1 rounded">
             F5: Toggle View
         </div>
 
@@ -136,8 +146,8 @@
             <input type="text" id="chat-input" placeholder="Press Enter to Chat" class="bg-black/60 border border-cyan-500/50 rounded px-3 py-1.5 text-sm text-white outline-none focus:border-cyan-400 transition-all">
         </div>
 
-        <div id="leaderboard" class="absolute top-4 right-4 bg-black/60 p-4 rounded text-white text-sm border border-purple-500/50 hidden min-w-[150px]">
-            <h3 class="font-bold text-purple-400 mb-2 border-b border-purple-500/50 pb-1 text-xs">PLAYERS</h3>
+        <div id="leaderboard" class="absolute top-4 right-4 bg-black/60 p-4 rounded text-white text-sm border border-purple-500/50 hidden min-w-[150px] pointer-events-auto">
+            <h3 class="font-bold text-purple-400 mb-2 border-b border-purple-500/50 pb-1 text-xs">PLAYERS ONLINE</h3>
             <ul id="leaderboard-list" class="flex flex-col gap-1.5 font-medium"></ul>
         </div>
         <div class="absolute flex items-center justify-center inset-0">
@@ -162,13 +172,17 @@
             totalCoins: 0, highScore: 0, currentScore: 0,
             unlockedColors: ['#00ffff'], equippedColor: '#00ffff',
             speedLevel: 0, jumpLevel: 0, 
-            lastSentPos: new THREE.Vector3(), lastSentYaw: 0,
+            lastSentPos: new THREE.Vector3(), lastSentYaw: 0, lastSentPitch: 0,
             lastCheckpoint: new THREE.Vector3(0, 5, 0),
             shopTab: 'colors',
             isChatting: false,
             viewMode: 'first', // 'first' or 'third'
             playerPosition: new THREE.Vector3(0, 5, 0)
         };
+
+        const famousRooms = [
+            "NeonPro", "Lobby1", "SpeedRun", "ParkourKing", "CityRun", "Void"
+        ];
 
         const shopItems = [
             { id: 'cyan', name: 'Default Cyan', color: '#00ffff', price: 0 },
@@ -200,6 +214,20 @@
             const mult = state.jumpLevel > 0 ? jumpUpgrades[state.jumpLevel - 1].mult : 1;
             return config.baseJumpForce * mult;
         }
+
+        // --- ROOM LIST UI ---
+        function renderFamousRooms() {
+            const container = document.getElementById('famous-rooms');
+            container.innerHTML = '';
+            famousRooms.forEach(room => {
+                const btn = document.createElement('button');
+                btn.className = "bg-black/40 border border-cyan-500/30 rounded py-1.5 px-2 text-[10px] hover:bg-cyan-500/20 transition-all text-left truncate";
+                btn.innerText = room;
+                btn.onclick = () => { document.getElementById('join-id').value = room; joinGame(); };
+                container.appendChild(btn);
+            });
+        }
+        renderFamousRooms();
 
         // --- CHAT SYSTEM ---
         function addChatMessage(sender, message, color = '#00ffff') {
@@ -334,29 +362,35 @@
         // --- MULTIPLAYER ---
         let peer = null, connections = [], isHost = false, otherPlayers = {};
         
+        function updateLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            if(!list) return;
+            list.innerHTML = `<li class="flex items-center gap-2 border-b border-white/5 pb-1"><div class="w-2 h-2 rounded-full" style="background:${state.equippedColor}"></div>${state.playerName} <span class="text-[8px] text-cyan-400">(YOU)</span></li>`;
+            for (let id in otherPlayers) {
+                list.innerHTML += `<li class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${otherPlayers[id].lastColor}"></div>${otherPlayers[id].nameTag.innerText}</li>`;
+            }
+        }
+
         function hostGame() {
             if (peer) return;
             const roomId = document.getElementById('host-room-id').value.trim();
             if(!roomId) {
-                document.getElementById('mp-status').innerText = "Please enter a room name!";
+                document.getElementById('mp-status').innerText = "Enter room name!";
                 return;
             }
-            document.getElementById('mp-status').innerText = "Connecting to relay...";
+            document.getElementById('mp-status').innerText = "Creating room...";
             peer = new Peer(roomId); 
             isHost = true;
             peer.on('open', (id) => { 
                 document.getElementById('peer-id-display').innerHTML = `<span class="text-cyan-500 uppercase text-[8px] tracking-widest">Room Name</span><span>${id}</span>`; 
                 document.getElementById('mp-status').innerHTML = `Room active: <span class="text-white font-mono font-bold">${id}</span>`; 
-                addChatMessage("System", `Lobby created! Room: ${id}`, "#ffff00");
+                addChatMessage("System", `Lobby created: ${id}`, "#ffff00");
                 setTimeout(() => startGame('multi'), 500);
             });
             peer.on('connection', (c) => { connections.push(c); setupConnection(c); });
             peer.on('error', (err) => {
-                if(err.type === 'unavailable-id') {
-                    document.getElementById('mp-status').innerText = "Room name already taken!";
-                } else {
-                    document.getElementById('mp-status').innerText = "Error: " + err.type;
-                }
+                if(err.type === 'unavailable-id') document.getElementById('mp-status').innerText = "Room name taken!";
+                else document.getElementById('mp-status').innerText = "Error: " + err.type;
                 peer = null;
             });
         }
@@ -373,17 +407,12 @@
                 c.on('open', () => { 
                     document.getElementById('peer-id-display').innerHTML = `<span class="text-cyan-500 uppercase text-[8px] tracking-widest">Room Name</span><span>${hostId}</span>`; 
                     setTimeout(() => startGame('multi'), 500); 
-                    addChatMessage("System", "Connected to Room: " + hostId, "#00ff00"); 
+                    addChatMessage("System", "Joined: " + hostId, "#00ff00"); 
                 }); 
                 c.on('error', () => {
-                    document.getElementById('mp-status').innerText = "Room not found!";
-                    peer.destroy();
-                    peer = null;
+                    document.getElementById('mp-status').innerText = "Not found!";
+                    peer.destroy(); peer = null;
                 });
-            });
-            peer.on('error', (err) => {
-                document.getElementById('mp-status').innerText = "Could not join!";
-                peer = null;
             });
         }
 
@@ -391,10 +420,7 @@
             c.on('data', (d) => {
                 if (d.type === 'state') { updateOtherPlayer(d); if (isHost) broadcast(d, c.peer); }
                 else if (d.type === 'disconnect') { removePlayer(d.id); if (isHost) broadcast(d, c.peer); }
-                else if (d.type === 'chat') { 
-                    addChatMessage(d.name, d.message, d.color); 
-                    if (isHost) broadcast(d, c.peer); 
-                }
+                else if (d.type === 'chat') { addChatMessage(d.name, d.message, d.color); if (isHost) broadcast(d, c.peer); }
             });
             c.on('close', () => { connections = connections.filter(con => con.peer !== c.peer); removePlayer(c.peer); if (isHost) broadcast({ type: 'disconnect', id: c.peer }); });
         }
@@ -426,11 +452,11 @@
                 const tag = document.createElement('div');
                 tag.className = 'absolute text-white font-bold text-[10px] bg-black/60 px-1 rounded pointer-events-none transform -translate-x-1/2';
                 tag.innerText = d.name || 'Player'; document.getElementById('name-tags-container').appendChild(tag);
-                otherPlayers[d.id] = { mesh: m, targetPos: new THREE.Vector3(d.x, d.y, d.z), targetYaw: d.yaw, nameTag: tag, lastColor: cHex };
+                otherPlayers[d.id] = { mesh: m, targetPos: new THREE.Vector3(d.x, d.y, d.z), targetYaw: d.yaw, targetPitch: d.pitch || 0, nameTag: tag, lastColor: cHex };
                 updateLeaderboard();
                 addChatMessage("System", `${d.name} joined.`, "#00ffff");
             }
-            const p = otherPlayers[d.id]; p.targetPos.set(d.x, d.y, d.z); p.targetYaw = d.yaw;
+            const p = otherPlayers[d.id]; p.targetPos.set(d.x, d.y, d.z); p.targetYaw = d.yaw; p.targetPitch = d.pitch || 0;
             if (p.lastColor !== cHex) { const c = new THREE.Color(cHex); p.mesh.userData.glowMat.color.copy(c); p.mesh.userData.glowMat.emissive.copy(c); p.mesh.userData.edgesMat.color.copy(c); p.lastColor = cHex; updateLeaderboard(); }
         }
 
@@ -526,15 +552,23 @@
                     camera.rotation.set(state.pitch, state.yaw, 0, 'YXZ');
                     if(localPlayerMesh) localPlayerMesh.visible = false;
                 } else {
-                    // Third person follow logic
-                    const offset = new THREE.Vector3(0, 1, 3);
-                    offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), state.yaw);
-                    camera.position.copy(state.playerPosition).add(offset);
-                    camera.lookAt(state.playerPosition);
+                    // Optimized Third person follow with pitch
+                    const distance = 4;
+                    const horizontalDist = distance * Math.cos(state.pitch);
+                    const verticalDist = distance * Math.sin(state.pitch);
+                    
+                    camera.position.set(
+                        state.playerPosition.x + horizontalDist * Math.sin(state.yaw),
+                        state.playerPosition.y + verticalDist + 1, // +1 for height offset
+                        state.playerPosition.z + horizontalDist * Math.cos(state.yaw)
+                    );
+                    camera.lookAt(state.playerPosition.x, state.playerPosition.y + 0.5, state.playerPosition.z);
+                    
                     if(localPlayerMesh) {
                         localPlayerMesh.visible = true;
                         localPlayerMesh.position.copy(state.playerPosition);
                         localPlayerMesh.rotation.y = state.yaw;
+                        // Tilt character mesh slightly with pitch if wanted, but standard is just yaw
                     }
                 }
 
@@ -554,10 +588,10 @@
 
                 if (connections.length > 0 && peer) {
                     const now = Date.now();
-                    const moved = state.playerPosition.distanceTo(state.lastSentPos) > 0.05 || Math.abs(state.yaw - state.lastSentYaw) > 0.05;
+                    const moved = state.playerPosition.distanceTo(state.lastSentPos) > 0.05 || Math.abs(state.yaw - state.lastSentYaw) > 0.05 || Math.abs(state.pitch - state.lastSentPitch) > 0.05;
                     if (now - state.lastNetSend > 50 && moved) {
-                        broadcast({ type: 'state', id: peer.id, name: state.playerName, color: state.equippedColor, x: state.playerPosition.x, y: state.playerPosition.y, z: state.playerPosition.z, yaw: state.yaw });
-                        state.lastNetSend = now; state.lastSentPos.copy(state.playerPosition); state.lastSentYaw = state.yaw;
+                        broadcast({ type: 'state', id: peer.id, name: state.playerName, color: state.equippedColor, x: state.playerPosition.x, y: state.playerPosition.y, z: state.playerPosition.z, yaw: state.yaw, pitch: state.pitch });
+                        state.lastNetSend = now; state.lastSentPos.copy(state.playerPosition); state.lastSentYaw = state.yaw; state.lastSentPitch = state.pitch;
                     }
                 }
             }
@@ -583,13 +617,7 @@
         }
 
         function startGame(m) { 
-            // Cleanup networking if it was somehow active
-            if(m === 'single' && peer) {
-                peer.destroy();
-                peer = null;
-                connections = [];
-            }
-            
+            if(m === 'single' && peer) { peer.destroy(); peer = null; connections = []; }
             document.getElementById('ui-layer').classList.add('hidden'); 
             document.getElementById('hud').classList.remove('hidden'); 
             state.isPlaying = true; 
@@ -613,28 +641,22 @@
 
         window.addEventListener('keydown', (e) => { 
             if (e.key === 'F5') {
-                e.preventDefault(); // Stop page refresh
+                e.preventDefault();
                 if(state.isPlaying) {
                     state.viewMode = state.viewMode === 'first' ? 'third' : 'first';
                     if(localPlayerMesh) localPlayerMesh.visible = (state.viewMode === 'third');
                 }
             }
             if (e.key === 'Escape') {
-                if (state.isChatting) {
-                    document.getElementById('chat-input').blur();
-                    state.isChatting = false;
-                } else {
-                    pauseGame();
-                }
+                if (state.isChatting) { document.getElementById('chat-input').blur(); state.isChatting = false; }
+                else pauseGame();
             }
             if (e.key === 'Enter') {
                 if (!state.isPlaying) return;
-                if (state.isChatting) {
-                    sendChat();
-                } else {
+                if (state.isChatting) sendChat();
+                else {
                     const input = document.getElementById('chat-input');
-                    input.focus();
-                    state.isChatting = true;
+                    input.focus(); state.isChatting = true;
                     document.getElementById('chat-log').style.opacity = '1';
                 }
             }
