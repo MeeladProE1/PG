@@ -14,6 +14,8 @@
         input[type=range] { accent-color: #00ffff; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-thumb { background: #00ffff; border-radius: 4px; }
+        #chat-log::-webkit-scrollbar { width: 4px; }
+        #chat-log::-webkit-scrollbar-thumb { background: rgba(0, 255, 255, 0.3); }
     </style>
 </head>
 <body class="text-white">
@@ -90,7 +92,7 @@
 
     <!-- Pause/HUD -->
     <div id="pause-menu" class="absolute inset-0 z-20 hidden items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div class="glass-panel p-8 rounded-2xl w-full max-w-sm text-center flex flex-col gap-4">
+        <div class="glass-panel p-8 rounded-2xl w-full max-sm text-center flex flex-col gap-4">
             <h2 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 mb-4">PAUSED</h2>
             <button onclick="resumeGame()" class="py-3 px-6 rounded-lg font-bold bg-purple-600 hover:bg-purple-500 transition-all text-white">Resume</button>
             <button onclick="quitGame()" class="py-3 px-6 rounded-lg font-bold bg-red-600/80 hover:bg-red-500 transition-all text-white border border-red-500">Quit</button>
@@ -98,11 +100,21 @@
     </div>
 
     <div id="hud" class="absolute inset-0 z-0 pointer-events-none hidden">
+        <!-- Top HUD -->
         <div class="absolute top-4 left-4 bg-black/50 px-4 py-2 rounded text-cyan-300 text-sm border border-cyan-800 hidden" id="peer-id-display"></div>
         <div class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/60 px-6 py-2 rounded-full border border-cyan-500/50 flex gap-6 shadow-[0_0_15px_rgba(0,255,255,0.2)]">
             <div class="text-white font-bold"><span class="text-yellow-400 mr-2">🪙</span><span id="hud-coins">0</span></div>
             <div class="text-white font-bold"><span class="text-purple-400 mr-2">Score:</span><span id="hud-score">0</span></div>
         </div>
+        
+        <!-- Chat Area -->
+        <div id="chat-box" class="absolute bottom-4 left-4 w-64 md:w-80 pointer-events-auto flex flex-col gap-2">
+            <div id="chat-log" class="max-h-40 overflow-y-auto bg-black/40 rounded border border-cyan-500/20 p-2 text-xs flex flex-col gap-1 transition-opacity duration-300 opacity-0">
+                <!-- Messages here -->
+            </div>
+            <input type="text" id="chat-input" placeholder="Press Enter to Chat" class="bg-black/60 border border-cyan-500/50 rounded px-3 py-1.5 text-sm text-white outline-none focus:border-cyan-400 transition-all">
+        </div>
+
         <div id="leaderboard" class="absolute top-4 right-4 bg-black/60 p-4 rounded text-white text-sm border border-purple-500/50 hidden min-w-[150px]">
             <h3 class="font-bold text-purple-400 mb-2 border-b border-purple-500/50 pb-1 text-xs">PLAYERS</h3>
             <ul id="leaderboard-list" class="flex flex-col gap-1.5 font-medium"></ul>
@@ -128,10 +140,11 @@
             velocity: new THREE.Vector3(), canJump: false, lastNetSend: 0,
             totalCoins: 0, highScore: 0, currentScore: 0,
             unlockedColors: ['#00ffff'], equippedColor: '#00ffff',
-            speedLevel: 0, jumpLevel: 0, // Upgrade levels
+            speedLevel: 0, jumpLevel: 0, 
             lastSentPos: new THREE.Vector3(), lastSentYaw: 0,
             lastCheckpoint: new THREE.Vector3(0, 5, 0),
-            shopTab: 'colors'
+            shopTab: 'colors',
+            isChatting: false
         };
 
         const shopItems = [
@@ -155,7 +168,6 @@
             { name: 'Jump III', price: 1000, mult: 1.5 }
         ];
 
-        // Derived stats
         function getMoveSpeed() {
             const mult = state.speedLevel > 0 ? speedUpgrades[state.speedLevel - 1].mult : 1;
             return config.baseMoveSpeed * mult;
@@ -164,6 +176,36 @@
         function getJumpForce() {
             const mult = state.jumpLevel > 0 ? jumpUpgrades[state.jumpLevel - 1].mult : 1;
             return config.baseJumpForce * mult;
+        }
+
+        // --- CHAT SYSTEM ---
+        function addChatMessage(sender, message, color = '#00ffff') {
+            const log = document.getElementById('chat-log');
+            log.style.opacity = '1';
+            const msgDiv = document.createElement('div');
+            msgDiv.innerHTML = `<span style="color: ${color}; font-weight: bold;">${sender}:</span> <span class="text-gray-200">${message}</span>`;
+            log.appendChild(msgDiv);
+            log.scrollTop = log.scrollHeight;
+            
+            // Fade out after a few seconds of inactivity
+            clearTimeout(log.fadeTimeout);
+            log.fadeTimeout = setTimeout(() => {
+                if (!state.isChatting) log.style.opacity = '0.5';
+            }, 5000);
+        }
+
+        function sendChat() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (msg && peer) {
+                const chatData = { type: 'chat', name: state.playerName, color: state.equippedColor, message: msg };
+                addChatMessage("You", msg, state.equippedColor);
+                broadcast(chatData);
+            }
+            input.value = '';
+            input.blur();
+            state.isChatting = false;
+            state.keys = {}; // Clear keys to prevent sticking
         }
 
         // --- SAVE SYSTEM ---
@@ -213,7 +255,6 @@
             document.getElementById('hud-score').innerText = state.currentScore;
         }
 
-        // --- SHOP SYSTEM ---
         function openShop() { showMenu('menu-shop'); renderShop(); }
         
         function setShopTab(tab) {
@@ -240,7 +281,6 @@
                         <div class="text-[10px] font-bold">${item.name}</div>${btnHtml}</div>`;
                 });
             } else {
-                // Speed Upgrade
                 const speedIdx = state.speedLevel;
                 const nextSpeed = speedUpgrades[speedIdx];
                 let speedBtn = speedIdx >= speedUpgrades.length ? `<button disabled class="w-full py-1 mt-2 bg-gray-600 rounded text-[10px]">MAXED</button>` :
@@ -252,7 +292,6 @@
                     <div class="text-[8px] text-gray-400">${nextSpeed ? 'Next: +' + Math.round((nextSpeed.mult - 1) * 100) + '%' : 'Max Level'}</div>
                     ${speedBtn}</div>`;
 
-                // Jump Upgrade
                 const jumpIdx = state.jumpLevel;
                 const nextJump = jumpUpgrades[jumpIdx];
                 let jumpBtn = jumpIdx >= jumpUpgrades.length ? `<button disabled class="w-full py-1 mt-2 bg-gray-600 rounded text-[10px]">MAXED</button>` :
@@ -268,17 +307,7 @@
 
         function buyColor(c, p) { if(state.totalCoins >= p) { state.totalCoins -= p; state.unlockedColors.push(c); state.equippedColor = c; saveData(); renderShop(); updateMenuStats(); } }
         function equipColor(c) { state.equippedColor = c; saveData(); renderShop(); }
-
-        function buyUpgrade(type, price) {
-            if (state.totalCoins >= price) {
-                state.totalCoins -= price;
-                if (type === 'speed') state.speedLevel++;
-                else if (type === 'jump') state.jumpLevel++;
-                saveData();
-                renderShop();
-                updateMenuStats();
-            }
-        }
+        function buyUpgrade(type, price) { if (state.totalCoins >= price) { state.totalCoins -= price; if (type === 'speed') state.speedLevel++; else if (type === 'jump') state.jumpLevel++; saveData(); renderShop(); updateMenuStats(); } }
 
         // --- MULTIPLAYER ---
         let peer = null, connections = [], isHost = false, otherPlayers = {};
@@ -291,19 +320,27 @@
         function hostGame() {
             if (peer) return;
             peer = new Peer(generateShortId()); isHost = true;
-            peer.on('open', (id) => { document.getElementById('peer-id-display').innerText = `Room ID: ${id}`; document.getElementById('mp-status').innerHTML = `Lobby ID: <span class="text-white font-mono">${id}</span>`; });
+            peer.on('open', (id) => { 
+                document.getElementById('peer-id-display').innerText = `Room ID: ${id}`; 
+                document.getElementById('mp-status').innerHTML = `Lobby ID: <span class="text-white font-mono">${id}</span>`; 
+                addChatMessage("System", `Lobby created! Room ID: ${id}`, "#ffff00");
+            });
             peer.on('connection', (c) => { connections.push(c); setupConnection(c); if (!state.isPlaying) setTimeout(() => startGame('multi'), 500); });
         }
         function joinGame() {
             const hostId = document.getElementById('join-id').value.trim();
             if (!hostId || peer) return;
             peer = new Peer(); isHost = false;
-            peer.on('open', () => { const c = peer.connect(hostId); connections.push(c); setupConnection(c); c.on('open', () => setTimeout(() => startGame('multi'), 500)); });
+            peer.on('open', () => { const c = peer.connect(hostId); connections.push(c); setupConnection(c); c.on('open', () => { setTimeout(() => startGame('multi'), 500); addChatMessage("System", "Connected to host!", "#00ff00"); }); });
         }
         function setupConnection(c) {
             c.on('data', (d) => {
                 if (d.type === 'state') { updateOtherPlayer(d); if (isHost) broadcast(d, c.peer); }
                 else if (d.type === 'disconnect') { removePlayer(d.id); if (isHost) broadcast(d, c.peer); }
+                else if (d.type === 'chat') { 
+                    addChatMessage(d.name, d.message, d.color); 
+                    if (isHost) broadcast(d, c.peer); 
+                }
             });
             c.on('close', () => { connections = connections.filter(con => con.peer !== c.peer); removePlayer(c.peer); if (isHost) broadcast({ type: 'disconnect', id: c.peer }); });
         }
@@ -330,12 +367,10 @@
                 tag.innerText = d.name || 'Player'; document.getElementById('name-tags-container').appendChild(tag);
                 otherPlayers[d.id] = { mesh: m, targetPos: new THREE.Vector3(d.x, d.y, d.z), targetYaw: d.yaw, nameTag: tag, lastColor: cHex };
                 updateLeaderboard();
+                addChatMessage("System", `${d.name} joined the game.`, "#00ffff");
             }
             const p = otherPlayers[d.id]; p.targetPos.set(d.x, d.y, d.z); p.targetYaw = d.yaw;
-            if (p.lastColor !== cHex) {
-                const c = new THREE.Color(cHex); p.mesh.userData.glowMat.color.copy(c); p.mesh.userData.glowMat.emissive.copy(c);
-                p.mesh.userData.edgesMat.color.copy(c); p.lastColor = cHex; updateLeaderboard();
-            }
+            if (p.lastColor !== cHex) { const c = new THREE.Color(cHex); p.mesh.userData.glowMat.color.copy(c); p.mesh.userData.glowMat.emissive.copy(c); p.mesh.userData.edgesMat.color.copy(c); p.lastColor = cHex; updateLeaderboard(); }
         }
 
         // --- THREE.JS ---
@@ -379,12 +414,8 @@
             for(let p of platforms) {
                 if(playerBox.intersectsBox(p.box)) {
                     if(axis === 'y') { 
-                        if(state.velocity.y < 0) { 
-                            pos.y = p.box.max.y + config.playerSize.h/2; 
-                            state.canJump = true; 
-                            if(p.isCheckpoint) state.lastCheckpoint.copy(pos);
-                        } else if(state.velocity.y > 0) pos.y = p.box.min.y - config.playerSize.h/2; 
-                        state.velocity.y = 0; 
+                        if(state.velocity.y < 0) { pos.y = p.box.max.y + config.playerSize.h/2; state.canJump = true; if(p.isCheckpoint) state.lastCheckpoint.copy(pos); }
+                        else if(state.velocity.y > 0) pos.y = p.box.min.y - config.playerSize.h/2; state.velocity.y = 0; 
                     }
                     else if(axis === 'x') { pos.x = state.velocity.x > 0 ? p.box.min.x - config.playerSize.w/2 : p.box.max.x + config.playerSize.w/2; state.velocity.x = 0; }
                     else if(axis === 'z') { pos.z = state.velocity.z > 0 ? p.box.min.z - config.playerSize.d/2 : p.box.max.z + config.playerSize.d/2; state.velocity.z = 0; }
@@ -398,7 +429,7 @@
         const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate); const dt = Math.min(clock.getDelta(), 0.1);
-            if (state.isPlaying) {
+            if (state.isPlaying && !state.isChatting) {
                 const ts = state.sensitivity * 2 * dt;
                 if (state.keys['arrowleft']) state.yaw += ts; if (state.keys['arrowright']) state.yaw -= ts;
                 if (state.keys['arrowup']) state.pitch += ts; if (state.keys['arrowdown']) state.pitch -= ts;
@@ -410,7 +441,6 @@
                 
                 const currentMoveSpeed = getMoveSpeed();
                 const currentJumpForce = getJumpForce();
-
                 state.velocity.x = d.x * currentMoveSpeed; state.velocity.z = d.z * currentMoveSpeed;
                 if (state.keys[' '] && state.canJump) { state.velocity.y = currentJumpForce; state.canJump = false; }
                 state.velocity.y += config.baseGravity * dt;
@@ -425,17 +455,13 @@
                         c.mesh.rotation.y += dt * 3; c.mesh.position.y = c.startY + Math.sin(Date.now()*0.005)*0.2;
                         if (camera.position.distanceTo(c.mesh.position) < 1.2) {
                             c.active = false; c.mesh.visible = false; state.currentScore += 100; state.totalCoins += 1;
-                            if (state.currentScore > state.highScore) state.highScore = state.currentScore;
-                            saveData(); updateHUDStats();
+                            if (state.currentScore > state.highScore) state.highScore = state.currentScore; saveData(); updateHUDStats();
                         }
                     }
                 });
                 
                 if (camera.position.y < -10) { 
-                    state.currentScore = 0; updateHUDStats(); 
-                    collectibles.forEach(c=>{c.active=true;c.mesh.visible=true;}); 
-                    camera.position.copy(state.lastCheckpoint); 
-                    state.velocity.set(0,0,0); 
+                    state.currentScore = 0; updateHUDStats(); collectibles.forEach(c=>{c.active=true;c.mesh.visible=true;}); camera.position.copy(state.lastCheckpoint); state.velocity.set(0,0,0); 
                 }
 
                 if (connections.length > 0 && peer) {
@@ -470,17 +496,33 @@
             ['menu-login', 'menu-home', 'menu-multi', 'menu-shop'].forEach(m => document.getElementById(m).classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden'); if(id !== 'menu-shop') document.getElementById(id).classList.add('flex');
         }
-        function startGame(m) { 
-            document.getElementById('ui-layer').classList.add('hidden'); 
-            document.getElementById('hud').classList.remove('hidden'); 
-            state.isPlaying = true; 
-            state.lastCheckpoint.set(0, 5, 0); 
-            if(m==='multi'){document.getElementById('peer-id-display').classList.remove('hidden');document.getElementById('leaderboard').classList.remove('hidden');updateLeaderboard();}}
+        function startGame(m) { document.getElementById('ui-layer').classList.add('hidden'); document.getElementById('hud').classList.remove('hidden'); state.isPlaying = true; state.lastCheckpoint.set(0, 5, 0); if(m==='multi'){document.getElementById('peer-id-display').classList.remove('hidden');document.getElementById('leaderboard').classList.remove('hidden');updateLeaderboard();}}
         function pauseGame() { state.isPlaying = false; document.getElementById('pause-menu').classList.remove('hidden'); document.getElementById('pause-menu').classList.add('flex'); }
         function resumeGame() { state.isPlaying = true; document.getElementById('pause-menu').classList.add('hidden'); state.keys = {}; }
         function quitGame() { location.reload(); }
 
-        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') pauseGame(); if(state.isPlaying) state.keys[e.key.toLowerCase()] = true; });
+        window.addEventListener('keydown', (e) => { 
+            if (e.key === 'Escape') {
+                if (state.isChatting) {
+                    document.getElementById('chat-input').blur();
+                    state.isChatting = false;
+                } else {
+                    pauseGame();
+                }
+            }
+            if (e.key === 'Enter') {
+                if (!state.isPlaying) return;
+                if (state.isChatting) {
+                    sendChat();
+                } else {
+                    const input = document.getElementById('chat-input');
+                    input.focus();
+                    state.isChatting = true;
+                    document.getElementById('chat-log').style.opacity = '1';
+                }
+            }
+            if(state.isPlaying && !state.isChatting) state.keys[e.key.toLowerCase()] = true; 
+        });
         window.addEventListener('keyup', (e) => { state.keys[e.key.toLowerCase()] = false; });
         document.getElementById('sensitivity-slider').addEventListener('input', (e) => { state.sensitivity = parseFloat(e.target.value); saveData(); });
         window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
