@@ -20,21 +20,16 @@
 
     <!-- UI Overlay (Main Menu) -->
     <div id="ui-layer" class="absolute inset-0 z-10 flex items-center justify-center bg-[#0f0c20]/90">
-        
         <div class="glass-panel p-8 rounded-2xl shadow-[0_0_40px_rgba(0,255,255,0.1)] w-full max-w-md text-center flex flex-col gap-6">
             <h1 class="text-5xl font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)] mb-2">NEON RUN</h1>
             
-            <!-- Login Menu -->
             <div id="menu-login" class="flex flex-col gap-4">
                 <h2 class="text-lg text-cyan-200 mb-2">Create or Load Profile</h2>
                 <input type="text" id="login-name" placeholder="Enter Username" class="w-full bg-black/50 border border-cyan-500 rounded-lg px-4 py-3 text-white outline-none focus:border-cyan-300 text-center text-xl font-bold">
                 <button onclick="login()" class="py-3 px-6 rounded-lg font-bold bg-gradient-to-r from-green-600 to-green-400 hover:from-green-500 hover:to-green-300 transition-all shadow-[0_0_15px_rgba(34,211,238,0.4)] text-lg mt-2">Sign In</button>
             </div>
 
-            <!-- Home Menu -->
             <div id="menu-home" class="hidden flex-col gap-4">
-                
-                <!-- Player Stats Panel -->
                 <div class="bg-black/40 p-4 rounded-lg border border-cyan-500/50 flex justify-between items-center mb-2">
                     <div class="text-left">
                         <div class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">Player</div>
@@ -65,94 +60,62 @@
                 <button onclick="logout()" class="text-sm text-gray-400 hover:text-white mt-2">← Switch Account</button>
             </div>
 
-            <!-- Shop Menu -->
             <div id="menu-shop" class="hidden flex-col gap-4">
                 <h2 class="text-2xl font-bold text-cyan-300 mb-2 flex justify-between items-center border-b border-cyan-800 pb-2">
                     <span>Cube Shop</span>
                     <span class="text-yellow-400 text-lg">🪙 <span id="shop-coins">0</span></span>
                 </h2>
-                <div class="grid grid-cols-2 gap-3 overflow-y-auto max-h-[40vh] p-1" id="shop-items">
-                    <!-- Populated by JS -->
-                </div>
-                <button onclick="showMenu('menu-home')" class="py-2 px-6 rounded-lg font-bold bg-gray-600 hover:bg-gray-500 transition-all mt-4 border border-gray-500">Back to Menu</button>
+                <div class="grid grid-cols-2 gap-3 overflow-y-auto max-h-[40vh] p-1" id="shop-items"></div>
+                <button onclick="showMenu('menu-home')" class="py-2 px-6 rounded-lg font-bold bg-gray-600 hover:bg-gray-500 transition-all mt-4 border border-gray-500">Back</button>
             </div>
 
-            <!-- Multiplayer Menu -->
             <div id="menu-multi" class="hidden flex-col gap-4">
                 <button onclick="hostGame()" class="py-3 px-6 rounded-lg font-bold border border-purple-400 text-purple-300 hover:bg-purple-400/20 transition-all">Host Room</button>
-                
                 <div class="flex gap-2">
                     <input type="text" id="join-id" placeholder="Enter Host ID" class="w-full bg-black/50 border border-purple-500 rounded-lg px-4 py-2 text-white outline-none focus:border-cyan-400">
                     <button onclick="joinGame()" class="py-2 px-4 rounded-lg font-bold bg-purple-600 hover:bg-purple-500 transition-all">Join</button>
                 </div>
-                
                 <div id="mp-status" class="text-sm text-cyan-300 min-h-[1.5rem]"></div>
                 <button onclick="showMenu('menu-home')" class="text-sm text-gray-400 hover:text-white mt-2">← Back</button>
             </div>
         </div>
     </div>
 
-    <!-- Pause Menu -->
+    <!-- Pause/HUD -->
     <div id="pause-menu" class="absolute inset-0 z-20 hidden items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div class="glass-panel p-8 rounded-2xl w-full max-w-sm text-center flex flex-col gap-4 shadow-[0_0_30px_rgba(255,0,255,0.1)]">
+        <div class="glass-panel p-8 rounded-2xl w-full max-w-sm text-center flex flex-col gap-4">
             <h2 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 mb-4">PAUSED</h2>
             <button onclick="resumeGame()" class="py-3 px-6 rounded-lg font-bold bg-purple-600 hover:bg-purple-500 transition-all text-white">Resume</button>
-            <button onclick="quitGame()" class="py-3 px-6 rounded-lg font-bold bg-red-600/80 hover:bg-red-500 transition-all text-white border border-red-500">Quit to Menu</button>
+            <button onclick="quitGame()" class="py-3 px-6 rounded-lg font-bold bg-red-600/80 hover:bg-red-500 transition-all text-white border border-red-500">Quit</button>
         </div>
     </div>
 
-    <!-- HUD -->
     <div id="hud" class="absolute inset-0 z-0 pointer-events-none hidden">
         <div class="absolute top-4 left-4 bg-black/50 px-4 py-2 rounded text-cyan-300 text-sm border border-cyan-800 hidden" id="peer-id-display"></div>
-        
-        <!-- Game Stats HUD -->
         <div class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/60 px-6 py-2 rounded-full border border-cyan-500/50 flex gap-6 shadow-[0_0_15px_rgba(0,255,255,0.2)]">
             <div class="text-white font-bold"><span class="text-yellow-400 mr-2">🪙</span><span id="hud-coins">0</span></div>
             <div class="text-white font-bold"><span class="text-purple-400 mr-2">Score:</span><span id="hud-score">0</span></div>
         </div>
-
-        <!-- Leaderboard -->
         <div id="leaderboard" class="absolute top-4 right-4 bg-black/60 p-4 rounded text-white text-sm border border-purple-500/50 hidden min-w-[150px]">
-            <h3 class="font-bold text-purple-400 mb-2 border-b border-purple-500/50 pb-1 tracking-wider text-xs">CONNECTED PLAYERS</h3>
-            <ul id="leaderboard-list" class="flex flex-col gap-1.5 font-medium">
-                <!-- Players will be added here -->
-            </ul>
+            <h3 class="font-bold text-purple-400 mb-2 border-b border-purple-500/50 pb-1 text-xs">PLAYERS</h3>
+            <ul id="leaderboard-list" class="flex flex-col gap-1.5 font-medium"></ul>
         </div>
-
         <div class="absolute flex items-center justify-center inset-0">
-            <div class="w-1.5 h-1.5 bg-white rounded-full opacity-50 shadow-[0_0_5px_#fff]"></div>
+            <div class="w-1.5 h-1.5 bg-white rounded-full opacity-50"></div>
         </div>
     </div>
 
-    <!-- Name Tags Container -->
     <div id="name-tags-container" class="absolute inset-0 z-0 pointer-events-none"></div>
 
     <script>
-        // --- GAME CONFIG & STATE ---
-        const config = {
-            gravity: -35,
-            jumpForce: 18, 
-            moveSpeed: 12, 
-            playerSize: { w: 0.6, h: 1.2, d: 0.6 }
-        };
-
+        // --- CONFIG & STATE ---
+        const config = { gravity: -35, jumpForce: 18, moveSpeed: 12, playerSize: { w: 0.6, h: 1.2, d: 0.6 } };
         const state = {
-            isPlaying: false,
-            playerName: '',
-            sensitivity: 1.5,
-            keys: {},
-            yaw: 0,
-            pitch: 0,
-            velocity: new THREE.Vector3(),
-            canJump: false,
-            lastNetSend: 0,
-            
-            // Save Data
-            totalCoins: 0,
-            highScore: 0,
-            currentScore: 0,
-            unlockedColors: ['#00ffff'],
-            equippedColor: '#00ffff'
+            isPlaying: false, playerName: '', sensitivity: 1.5, keys: {}, yaw: 0, pitch: 0,
+            velocity: new THREE.Vector3(), canJump: false, lastNetSend: 0,
+            totalCoins: 0, highScore: 0, currentScore: 0,
+            unlockedColors: ['#00ffff'], equippedColor: '#00ffff',
+            lastSentPos: new THREE.Vector3(), lastSentYaw: 0
         };
 
         const shopItems = [
@@ -164,14 +127,11 @@
             { id: 'white', name: 'Pure Light', color: '#ffffff', price: 1000 }
         ];
 
-        // --- SAVE SYSTEM (LOCAL STORAGE) ---
+        // --- SAVE SYSTEM ---
         function login() {
             const name = document.getElementById('login-name').value.trim();
             if(!name) return;
-            
             state.playerName = name;
-            
-            // Load saved data using the username as the key
             const savedData = localStorage.getItem('neonRunSave_' + name);
             if(savedData) {
                 const data = JSON.parse(savedData);
@@ -179,39 +139,24 @@
                 state.highScore = data.highScore || 0;
                 state.unlockedColors = data.unlockedColors || ['#00ffff'];
                 state.equippedColor = data.equippedColor || '#00ffff';
-                if (data.sensitivity) {
-                    state.sensitivity = data.sensitivity;
-                    document.getElementById('sensitivity-slider').value = data.sensitivity;
-                }
+                state.sensitivity = data.sensitivity || 1.5;
+                document.getElementById('sensitivity-slider').value = state.sensitivity;
             } else {
-                // New profile
-                state.totalCoins = 0;
-                state.highScore = 0;
-                state.unlockedColors = ['#00ffff'];
-                state.equippedColor = '#00ffff';
+                state.totalCoins = 0; state.highScore = 0; state.unlockedColors = ['#00ffff']; state.equippedColor = '#00ffff';
                 saveData();
             }
-
             updateMenuStats();
             showMenu('menu-home');
         }
 
-        function logout() {
-            state.playerName = '';
-            document.getElementById('login-name').value = '';
-            showMenu('menu-login');
-        }
+        function logout() { state.playerName = ''; showMenu('menu-login'); }
 
         function saveData() {
             if(!state.playerName) return;
-            const data = {
-                coins: state.totalCoins,
-                highScore: state.highScore,
-                sensitivity: state.sensitivity,
-                unlockedColors: state.unlockedColors,
-                equippedColor: state.equippedColor
-            };
-            localStorage.setItem('neonRunSave_' + state.playerName, JSON.stringify(data));
+            localStorage.setItem('neonRunSave_' + state.playerName, JSON.stringify({
+                coins: state.totalCoins, highScore: state.highScore, sensitivity: state.sensitivity,
+                unlockedColors: state.unlockedColors, equippedColor: state.equippedColor
+            }));
         }
 
         function updateMenuStats() {
@@ -225,633 +170,205 @@
             document.getElementById('hud-score').innerText = state.currentScore;
         }
 
-        // --- SHOP SYSTEM ---
-        function openShop() {
-            showMenu('menu-shop');
-            renderShop();
-        }
-
+        function openShop() { showMenu('menu-shop'); renderShop(); }
         function renderShop() {
             const container = document.getElementById('shop-items');
             document.getElementById('shop-coins').innerText = state.totalCoins;
             container.innerHTML = '';
-
             shopItems.forEach(item => {
                 const isUnlocked = state.unlockedColors.includes(item.color);
                 const isEquipped = state.equippedColor === item.color;
-
-                let btnHtml = '';
-                if (isEquipped) {
-                    btnHtml = `<button disabled class="w-full py-1.5 mt-2 bg-gray-600 text-gray-300 rounded text-sm font-bold opacity-80 cursor-default border border-gray-500">Equipped</button>`;
-                } else if (isUnlocked) {
-                    btnHtml = `<button onclick="equipColor('${item.color}')" class="w-full py-1.5 mt-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-sm font-bold transition-all shadow-[0_0_5px_${item.color}]">Equip</button>`;
-                } else {
-                    const canAfford = state.totalCoins >= item.price;
-                    btnHtml = `<button onclick="buyColor('${item.color}', ${item.price})" class="w-full py-1.5 mt-2 ${canAfford ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-red-900/50 text-red-200 cursor-not-allowed border border-red-800'} rounded text-sm font-bold transition-all">${item.price} 🪙</button>`;
-                }
-
-                container.innerHTML += `
-                    <div class="bg-black/50 border ${isEquipped ? 'border-yellow-400' : 'border-gray-700'} rounded-lg p-3 flex flex-col items-center relative overflow-hidden">
-                        ${isEquipped ? '<div class="absolute top-0 right-0 bg-yellow-400 text-black text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">ACTIVE</div>' : ''}
-                        <div class="w-10 h-10 rounded mb-2 shadow-[0_0_15px_${item.color}] border-2 border-white/20" style="background-color: ${item.color};"></div>
-                        <div class="text-xs font-bold text-gray-200">${item.name}</div>
-                        ${btnHtml}
-                    </div>
-                `;
+                let btnHtml = isEquipped ? `<button disabled class="w-full py-1 mt-2 bg-gray-600 rounded text-xs">Equipped</button>` :
+                              isUnlocked ? `<button onclick="equipColor('${item.color}')" class="w-full py-1 mt-2 bg-cyan-600 rounded text-xs">Equip</button>` :
+                              `<button onclick="buyColor('${item.color}', ${item.price})" class="w-full py-1 mt-2 ${state.totalCoins >= item.price ? 'bg-green-600' : 'bg-red-900'} rounded text-xs">${item.price} 🪙</button>`;
+                container.innerHTML += `<div class="bg-black/50 border ${isEquipped ? 'border-yellow-400' : 'border-gray-700'} rounded p-2 flex flex-col items-center">
+                    <div class="w-8 h-8 rounded mb-1" style="background:${item.color}; box-shadow: 0 0 10px ${item.color}"></div>
+                    <div class="text-[10px] font-bold">${item.name}</div>${btnHtml}</div>`;
             });
         }
+        function buyColor(c, p) { if(state.totalCoins >= p) { state.totalCoins -= p; state.unlockedColors.push(c); state.equippedColor = c; saveData(); renderShop(); updateMenuStats(); } }
+        function equipColor(c) { state.equippedColor = c; saveData(); renderShop(); }
 
-        function buyColor(color, price) {
-            if (state.totalCoins >= price) {
-                state.totalCoins -= price;
-                state.unlockedColors.push(color);
-                state.equippedColor = color; // Auto equip on buy
-                saveData();
-                renderShop();
-                updateMenuStats();
-            }
-        }
-
-        function equipColor(color) {
-            state.equippedColor = color;
-            saveData();
-            renderShop();
-        }
-
-        // --- MULTIPLAYER (PEERJS) ---
-        let peer = null;
-        let connections = []; 
-        let isHost = false;
-        let otherPlayers = {}; 
-
-        function generateShortId() {
-            return Math.floor(10000 + Math.random() * 90000).toString(); 
-        }
-
+        // --- MULTIPLAYER ---
+        let peer = null, connections = [], isHost = false, otherPlayers = {};
+        function generateShortId() { return Math.floor(10000 + Math.random() * 90000).toString(); }
         function updateLeaderboard() {
             const list = document.getElementById('leaderboard-list');
-            list.innerHTML = `<li class="text-cyan-200 flex items-center gap-2"><div class="w-3 h-3 rounded-full shadow-[0_0_5px_${state.equippedColor}]" style="background:${state.equippedColor}"></div>${state.playerName} (You)</li>`;
-            
-            for (let id in otherPlayers) {
-                const name = otherPlayers[id].nameTag.innerText;
-                const color = otherPlayers[id].lastColor;
-                list.innerHTML += `<li class="text-purple-200 flex items-center gap-2"><div class="w-3 h-3 rounded-full shadow-[0_0_5px_${color}]" style="background:${color}"></div>${name}</li>`;
-            }
+            list.innerHTML = `<li class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${state.equippedColor}"></div>${state.playerName}</li>`;
+            for (let id in otherPlayers) list.innerHTML += `<li class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${otherPlayers[id].lastColor}"></div>${otherPlayers[id].nameTag.innerText}</li>`;
         }
-
         function hostGame() {
-            document.getElementById('mp-status').innerText = "Creating room...";
-            if (!peer) {
-                peer = new Peer(generateShortId());
-                isHost = true;
-                peer.on('open', (id) => {
-                    document.getElementById('peer-id-display').innerText = `Room ID: ${id}`;
-                    document.getElementById('mp-status').innerHTML = `Lobby created!<br>Share this ID: <span class="bg-black/50 px-3 py-1 rounded text-white select-all border border-cyan-500 font-mono text-xl tracking-widest inline-block mt-2">${id}</span>`;
-                });
-                peer.on('connection', (conn) => {
-                    connections.push(conn);
-                    setupConnection(conn);
-                    document.getElementById('mp-status').innerText = `Players in lobby: ${connections.length}`;
-                    
-                    if (!state.isPlaying) {
-                        setTimeout(() => startGame('multi'), 1000);
-                    }
-                });
-                peer.on('error', (err) => {
-                    document.getElementById('mp-status').innerText = "Error: " + err.type;
-                });
-            }
+            if (peer) return;
+            peer = new Peer(generateShortId()); isHost = true;
+            peer.on('open', (id) => { document.getElementById('peer-id-display').innerText = `Room ID: ${id}`; document.getElementById('mp-status').innerHTML = `Lobby ID: <span class="text-white font-mono">${id}</span>`; });
+            peer.on('connection', (c) => { connections.push(c); setupConnection(c); if (!state.isPlaying) setTimeout(() => startGame('multi'), 500); });
         }
-
         function joinGame() {
             const hostId = document.getElementById('join-id').value.trim();
-            if (!hostId) return;
-            document.getElementById('mp-status').innerText = "Connecting...";
-            
-            if (!peer) {
-                peer = new Peer(); 
-                isHost = false;
-                peer.on('open', () => {
-                    const conn = peer.connect(hostId);
-                    connections.push(conn);
-                    setupConnection(conn);
-                    conn.on('open', () => {
-                        document.getElementById('peer-id-display').innerText = `Connected to Room: ${hostId}`;
-                        document.getElementById('mp-status').innerText = "Connected! Starting...";
-                        setTimeout(() => startGame('multi'), 1000);
-                    });
-                });
-                peer.on('error', (err) => {
-                    document.getElementById('mp-status').innerText = "Error: " + err.type;
-                });
-            }
+            if (!hostId || peer) return;
+            peer = new Peer(); isHost = false;
+            peer.on('open', () => { const c = peer.connect(hostId); connections.push(c); setupConnection(c); c.on('open', () => setTimeout(() => startGame('multi'), 500)); });
         }
-
-        function setupConnection(conn) {
-            if (conn.open) updateLeaderboard();
-
-            conn.on('open', () => {
-                updateLeaderboard();
+        function setupConnection(c) {
+            c.on('data', (d) => {
+                if (d.type === 'state') { updateOtherPlayer(d); if (isHost) broadcast(d, c.peer); }
+                else if (d.type === 'disconnect') { removePlayer(d.id); if (isHost) broadcast(d, c.peer); }
             });
-
-            conn.on('data', (data) => {
-                if (data.type === 'state') {
-                    updateOtherPlayer(data);
-                    if (isHost) broadcast(data, conn.peer);
-                } else if (data.type === 'disconnect') {
-                    removePlayer(data.id);
-                    if (isHost) broadcast(data, conn.peer);
-                }
-            });
-
-            conn.on('close', () => {
-                connections = connections.filter(c => c.peer !== conn.peer);
-                removePlayer(conn.peer);
-                if (isHost) broadcast({ type: 'disconnect', id: conn.peer });
-            });
+            c.on('close', () => { connections = connections.filter(con => con.peer !== c.peer); removePlayer(c.peer); if (isHost) broadcast({ type: 'disconnect', id: c.peer }); });
         }
-
-        function broadcast(data, excludePeerId = null) {
-            connections.forEach(conn => {
-                if (conn.open && conn.peer !== excludePeerId) {
-                    conn.send(data);
-                }
-            });
-        }
-
-        function removePlayer(id) {
-            if (otherPlayers[id]) {
-                scene.remove(otherPlayers[id].mesh);
-                if (otherPlayers[id].nameTag) otherPlayers[id].nameTag.remove();
-                delete otherPlayers[id];
-                updateLeaderboard();
-            }
-        }
-
-        function createPlayerMesh(colorHex) {
-            const group = new THREE.Group();
-            
-            const color = new THREE.Color(colorHex);
-
+        function broadcast(d, skip = null) { connections.forEach(c => { if (c.open && c.peer !== skip) c.send(d); }); }
+        function removePlayer(id) { if (otherPlayers[id]) { scene.remove(otherPlayers[id].mesh); otherPlayers[id].nameTag.remove(); delete otherPlayers[id]; updateLeaderboard(); } }
+        function createPlayerMesh(cHex) {
+            const g = new THREE.Group(); const color = new THREE.Color(cHex);
             const darkMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2, metalness: 0.8 });
             const glowMat = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 1.5 });
-
             const boxGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
-            const innerCube = new THREE.Mesh(boxGeo, darkMat);
-            innerCube.castShadow = true;
-
-            const edgesGeo = new THREE.EdgesGeometry(boxGeo);
-            const edgesMat = new THREE.LineBasicMaterial({ color: color, linewidth: 2 });
-            const edges = new THREE.LineSegments(edgesGeo, edgesMat);
-            innerCube.add(edges);
-
-            const visor = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.1), glowMat);
-            visor.position.set(0, 0.1, -0.3);
-            innerCube.add(visor);
-
-            group.add(innerCube);
-            // Save materials in userData so we can update them if the player changes color
-            group.userData = { innerCube: innerCube, roll: 0, lastY: 0, glowMat: glowMat, edgesMat: edgesMat };
-            return group;
+            const cube = new THREE.Mesh(boxGeo, darkMat); cube.castShadow = true;
+            const edges = new THREE.LineSegments(new THREE.EdgesGeometry(boxGeo), new THREE.LineBasicMaterial({ color: color }));
+            cube.add(edges);
+            const v = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.1), glowMat); v.position.set(0, 0.1, -0.3); cube.add(v);
+            g.add(cube); g.userData = { innerCube: cube, roll: 0, lastY: 0, glowMat, edgesMat: edges.material };
+            return g;
         }
-
-        function updateOtherPlayer(data) {
-            const colorHex = data.color || '#00ffff';
-
-            if (!otherPlayers[data.id]) {
-                const mesh = createPlayerMesh(colorHex);
-                scene.add(mesh);
-
-                const nameTag = document.createElement('div');
-                nameTag.className = 'absolute text-white font-bold text-sm bg-black/60 border border-purple-500/50 px-2 py-1 rounded shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full transition-opacity duration-75';
-                nameTag.innerText = data.name || 'Player';
-                document.getElementById('name-tags-container').appendChild(nameTag);
-
-                otherPlayers[data.id] = { mesh, targetPos: new THREE.Vector3(data.x, data.y, data.z), targetYaw: data.yaw, nameTag, lastColor: colorHex };
+        function updateOtherPlayer(d) {
+            const cHex = d.color || '#00ffff';
+            if (!otherPlayers[d.id]) {
+                const m = createPlayerMesh(cHex); scene.add(m);
+                const tag = document.createElement('div');
+                tag.className = 'absolute text-white font-bold text-[10px] bg-black/60 px-1 rounded pointer-events-none transform -translate-x-1/2';
+                tag.innerText = d.name || 'Player'; document.getElementById('name-tags-container').appendChild(tag);
+                otherPlayers[d.id] = { mesh: m, targetPos: new THREE.Vector3(d.x, d.y, d.z), targetYaw: d.yaw, nameTag: tag, lastColor: cHex };
                 updateLeaderboard();
             }
-            
-            const p = otherPlayers[data.id];
-            p.targetPos.set(data.x, data.y, data.z);
-            p.targetYaw = data.yaw;
-            
-            // Handle name or color changes mid-game
-            let needsLeaderboardUpdate = false;
-
-            if (p.nameTag.innerText !== data.name) {
-                p.nameTag.innerText = data.name || 'Player';
-                needsLeaderboardUpdate = true;
-            }
-
-            if (p.lastColor !== colorHex) {
-                const newColor = new THREE.Color(colorHex);
-                p.mesh.userData.glowMat.color.copy(newColor);
-                p.mesh.userData.glowMat.emissive.copy(newColor);
-                p.mesh.userData.edgesMat.color.copy(newColor);
-                p.lastColor = colorHex;
-                needsLeaderboardUpdate = true;
-            }
-
-            if (needsLeaderboardUpdate) {
-                updateLeaderboard();
+            const p = otherPlayers[d.id]; p.targetPos.set(d.x, d.y, d.z); p.targetYaw = d.yaw;
+            if (p.lastColor !== cHex) {
+                const c = new THREE.Color(cHex); p.mesh.userData.glowMat.color.copy(c); p.mesh.userData.glowMat.emissive.copy(c);
+                p.mesh.userData.edgesMat.color.copy(c); p.lastColor = cHex; updateLeaderboard();
             }
         }
 
-        // --- THREE.JS SETUP ---
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0f0c20);
-        scene.fog = new THREE.FogExp2(0x0f0c20, 0.015);
-
+        // --- THREE.JS ---
+        const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0f0c20); scene.fog = new THREE.FogExp2(0x0f0c20, 0.015);
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        document.body.appendChild(renderer.domElement);
+        const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true; document.body.appendChild(renderer.domElement);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+        const dl = new THREE.DirectionalLight(0x00ffff, 0.6); dl.position.set(50, 100, 50); dl.castShadow = true; scene.add(dl);
 
-        // Lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-        scene.add(ambientLight);
-
-        const dirLight = new THREE.DirectionalLight(0x00ffff, 0.6);
-        dirLight.position.set(50, 100, 50);
-        dirLight.castShadow = true;
-        dirLight.shadow.camera.left = -100; dirLight.shadow.camera.right = 100;
-        dirLight.shadow.camera.top = 100; dirLight.shadow.camera.bottom = -100;
-        dirLight.shadow.mapSize.width = 2048; dirLight.shadow.mapSize.height = 2048;
-        scene.add(dirLight);
-
-        // Player Bounds
-        const playerBox = new THREE.Box3();
-        camera.position.set(0, 5, 0);
-
-        // Level Design & Coins
-        const platforms = [];
-        const collectibles = [];
-        const coinGeo = new THREE.OctahedronGeometry(0.3);
-        const coinMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xffaa00, emissiveIntensity: 0.8 });
-
+        const platforms = [], collectibles = [];
         const levelData = [
-            { p: [0, 0, 0], s: [10, 1, 10], c: 0x222222 }, // Start
-            { p: [0, 2, -15], s: [4, 1, 4], c: 0x00ffff },
-            { p: [8, 4, -20], s: [4, 1, 4], c: 0xff00ff },
-            { p: [15, 6, -12], s: [3, 1, 3], c: 0x00ffff },
-            { p: [25, 8, -12], s: [6, 1, 6], c: 0x222222 }, // Safe Zone 1
-            { p: [25, 10, -25], s: [2, 1, 2], c: 0xff00ff },
-            { p: [25, 12, -35], s: [2, 1, 2], c: 0x00ffff },
-            { p: [15, 14, -40], s: [3, 1, 3], c: 0xff00ff },
-            { p: [0, 16, -40], s: [6, 1, 6], c: 0x222222 }, // Safe Zone 2
-            { p: [-12, 18, -45], s: [3, 1, 3], c: 0x00ffff },
-            { p: [-20, 20, -55], s: [2, 1, 10], c: 0xff00ff }, // Narrow bridge
-            { p: [-10, 22, -65], s: [3, 1, 3], c: 0x00ffff },
-            { p: [0, 25, -70], s: [4, 1, 4], c: 0xff00ff }, // High jump
-            { p: [15, 27, -70], s: [3, 1, 3], c: 0x00ffff },
-            { p: [30, 28, -75], s: [8, 1, 8], c: 0x222222 }, // Safe Zone 3
-            { p: [30, 30, -90], s: [2, 1, 2], c: 0xff00ff }, // Tiny steps
-            { p: [20, 32, -95], s: [2, 1, 2], c: 0x00ffff },
-            { p: [10, 34, -100], s: [2, 1, 2], c: 0xff00ff },
-            { p: [0, 36, -110], s: [4, 1, 4], c: 0x00ffff },
-            { p: [-15, 38, -115], s: [3, 1, 3], c: 0xff00ff },
-            { p: [-30, 40, -125], s: [12, 1, 12], c: 0x00ff00 } // True Finish Line
+            { p: [0, 0, 0], s: [10, 1, 10], c: 0x222222 }, { p: [0, 2, -15], s: [4, 1, 4], c: 0x00ffff },
+            { p: [8, 4, -20], s: [4, 1, 4], c: 0xff00ff }, { p: [15, 6, -12], s: [3, 1, 3], c: 0x00ffff },
+            { p: [25, 8, -12], s: [6, 1, 6], c: 0x222222 }, { p: [25, 10, -25], s: [2, 1, 2], c: 0xff00ff },
+            { p: [25, 12, -35], s: [2, 1, 2], c: 0x00ffff }, { p: [15, 14, -40], s: [3, 1, 3], c: 0xff00ff },
+            { p: [0, 16, -40], s: [6, 1, 6], c: 0x222222 }, { p: [-12, 18, -45], s: [3, 1, 3], c: 0x00ffff },
+            { p: [-20, 20, -55], s: [2, 1, 10], c: 0xff00ff }, { p: [-10, 22, -65], s: [3, 1, 3], c: 0x00ffff },
+            { p: [0, 25, -70], s: [4, 1, 4], c: 0xff00ff }, { p: [15, 27, -70], s: [3, 1, 3], c: 0x00ffff },
+            { p: [30, 28, -75], s: [8, 1, 8], c: 0x222222 }, { p: [30, 30, -90], s: [2, 1, 2], c: 0xff00ff },
+            { p: [20, 32, -95], s: [2, 1, 2], c: 0x00ffff }, { p: [10, 34, -100], s: [2, 1, 2], c: 0xff00ff },
+            { p: [0, 36, -110], s: [4, 1, 4], c: 0x00ffff }, { p: [-15, 38, -115], s: [3, 1, 3], c: 0xff00ff },
+            { p: [-30, 40, -125], s: [12, 1, 12], c: 0x00ff00 }
         ];
 
-        levelData.forEach(data => {
-            const geo = new THREE.BoxGeometry(data.s[0], data.s[1], data.s[2]);
-            const mat = new THREE.MeshStandardMaterial({ 
-                color: data.c, 
-                roughness: 0.1, 
-                metalness: 0.5,
-                emissive: data.c === 0x222222 ? 0x000000 : data.c,
-                emissiveIntensity: 0.4
-            });
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.position.set(data.p[0], data.p[1], data.p[2]);
-            mesh.receiveShadow = true;
-            mesh.castShadow = true;
-            scene.add(mesh);
-            
-            const box = new THREE.Box3().setFromObject(mesh);
-            platforms.push(box);
-
-            if(data.c !== 0x222222) {
-                const pl = new THREE.PointLight(data.c, 0.5, 20);
-                pl.position.set(data.p[0], data.p[1] + 2, data.p[2]);
-                scene.add(pl);
-
-                // Add a coin hovering above every non-safe platform
-                const coinMesh = new THREE.Mesh(coinGeo, coinMat);
-                coinMesh.position.set(data.p[0], data.p[1] + 1.5, data.p[2]);
-                scene.add(coinMesh);
-                collectibles.push({ mesh: coinMesh, active: true, startY: data.p[1] + 1.5 });
+        levelData.forEach(d => {
+            const m = new THREE.Mesh(new THREE.BoxGeometry(d.s[0], d.s[1], d.s[2]), new THREE.MeshStandardMaterial({ color: d.c, roughness: 0.1, metalness: 0.5, emissive: d.c === 0x222222 ? 0 : d.c, emissiveIntensity: 0.4 }));
+            m.position.set(d.p[0], d.p[1], d.p[2]); m.receiveShadow = true; m.castShadow = true; scene.add(m); platforms.push(new THREE.Box3().setFromObject(m));
+            if(d.c !== 0x222222) {
+                const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.3), new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0xffaa00 }));
+                c.position.set(d.p[0], d.p[1] + 1.5, d.p[2]); scene.add(c); collectibles.push({ mesh: c, active: true, startY: d.p[1] + 1.5 });
             }
         });
 
-        const gridHelper = new THREE.GridHelper(400, 100, 0xff0055, 0xff0055);
-        gridHelper.position.y = -5;
-        gridHelper.material.opacity = 0.2;
-        gridHelper.material.transparent = true;
-        scene.add(gridHelper);
-
-        // --- INPUT HANDLING ---
-        document.getElementById('sensitivity-slider').addEventListener('input', (e) => {
-            state.sensitivity = parseFloat(e.target.value);
-            saveData(); // Save sensitivity change
-        });
-
-        window.addEventListener('keydown', (e) => {
-            const key = e.key.toLowerCase();
-            
-            if (key === 'escape') {
-                if (state.isPlaying) {
-                    pauseGame();
-                } else if (!document.getElementById('pause-menu').classList.contains('hidden')) {
-                    resumeGame();
-                }
-            }
-
-            if(state.isPlaying) state.keys[key] = true;
-        });
-
-        window.addEventListener('keyup', (e) => {
-            if(state.isPlaying) state.keys[e.key.toLowerCase()] = false;
-        });
-
-        function showMenu(id) {
-            document.getElementById('menu-login').classList.add('hidden');
-            document.getElementById('menu-home').classList.add('hidden');
-            document.getElementById('menu-multi').classList.add('hidden');
-            document.getElementById('menu-shop').classList.add('hidden');
-
-            document.getElementById(id).classList.remove('hidden');
-            if(id === 'menu-login' || id === 'menu-home') {
-                document.getElementById(id).classList.add('flex');
-            }
-        }
-
-        function resetRun() {
-            state.currentScore = 0;
-            updateHUDStats();
-            
-            // Respawn all coins
-            collectibles.forEach(c => {
-                c.active = true;
-                c.mesh.visible = true;
-            });
-            
-            camera.position.set((Math.random() - 0.5) * 2, 5, (Math.random() - 0.5) * 2);
-            state.velocity.set(0,0,0);
-            state.yaw = 0;
-            state.pitch = 0;
-        }
-
-        function startGame(mode) {
-            document.activeElement.blur(); 
-            document.getElementById('ui-layer').classList.add('hidden');
-            document.getElementById('hud').classList.remove('hidden');
-            
-            if(mode === 'multi') {
-                document.getElementById('peer-id-display').classList.remove('hidden');
-                document.getElementById('leaderboard').classList.remove('hidden');
-                updateLeaderboard();
-            } else {
-                document.getElementById('peer-id-display').classList.add('hidden');
-                document.getElementById('leaderboard').classList.add('hidden');
-            }
-            
-            resetRun();
-            state.isPlaying = true;
-        }
-
-        function pauseGame() {
-            state.isPlaying = false;
-            document.getElementById('pause-menu').classList.remove('hidden');
-            document.getElementById('pause-menu').classList.add('flex');
-        }
-
-        function resumeGame() {
-            state.isPlaying = true;
-            document.getElementById('pause-menu').classList.add('hidden');
-            document.getElementById('pause-menu').classList.remove('flex');
-            state.keys = {}; 
-        }
-
-        function quitGame() {
-            resumeGame(); 
-            state.isPlaying = false;
-            
-            document.getElementById('ui-layer').classList.remove('hidden');
-            document.getElementById('hud').classList.add('hidden');
-            
-            if (peer) {
-                peer.destroy();
-                peer = null;
-                connections = [];
-                isHost = false;
-                
-                for (let id in otherPlayers) {
-                    removePlayer(id);
-                }
-                otherPlayers = {};
-            }
-            
-            updateMenuStats();
-            showMenu('menu-home');
-            document.getElementById('mp-status').innerText = "";
-        }
-
+        const playerBox = new THREE.Box3();
         function checkCollisions(pos, axis) {
-            const pad = 0.01;
-            const yPad = axis !== 'y' ? 0.05 : 0; 
-
+            const pad = 0.01; const yPad = axis !== 'y' ? 0.05 : 0;
             playerBox.min.set(pos.x - config.playerSize.w/2 + pad, pos.y - config.playerSize.h/2 + yPad, pos.z - config.playerSize.d/2 + pad);
             playerBox.max.set(pos.x + config.playerSize.w/2 - pad, pos.y + config.playerSize.h/2 - yPad, pos.z + config.playerSize.d/2 - pad);
-
-            let hit = false;
             for(let p of platforms) {
                 if(playerBox.intersectsBox(p)) {
-                    if(axis === 'y') {
-                        if(state.velocity.y < 0) { 
-                            pos.y = p.max.y + config.playerSize.h/2;
-                            state.canJump = true;
-                        } else if(state.velocity.y > 0) { 
-                            pos.y = p.min.y - config.playerSize.h/2;
-                        }
-                        state.velocity.y = 0;
-                    }
-                    else if(axis === 'x') {
-                        if(state.velocity.x > 0) pos.x = p.min.x - config.playerSize.w/2;
-                        else if(state.velocity.x < 0) pos.x = p.max.x + config.playerSize.w/2;
-                        state.velocity.x = 0;
-                    }
-                    else if(axis === 'z') {
-                        if(state.velocity.z > 0) pos.z = p.min.z - config.playerSize.d/2;
-                        else if(state.velocity.z < 0) pos.z = p.max.z + config.playerSize.d/2;
-                        state.velocity.z = 0;
-                    }
-                    hit = true;
+                    if(axis === 'y') { if(state.velocity.y < 0) { pos.y = p.max.y + config.playerSize.h/2; state.canJump = true; } else if(state.velocity.y > 0) pos.y = p.min.y - config.playerSize.h/2; state.velocity.y = 0; }
+                    else if(axis === 'x') { pos.x = state.velocity.x > 0 ? p.min.x - config.playerSize.w/2 : p.max.x + config.playerSize.w/2; state.velocity.x = 0; }
+                    else if(axis === 'z') { pos.z = state.velocity.z > 0 ? p.min.z - config.playerSize.d/2 : p.max.z + config.playerSize.d/2; state.velocity.z = 0; }
+                    return true;
                 }
             }
-            return hit;
+            return false;
         }
 
+        // --- GAME LOOP ---
         const clock = new THREE.Clock();
-
         function animate() {
-            requestAnimationFrame(animate);
-            const dt = Math.min(clock.getDelta(), 0.1);
-
+            requestAnimationFrame(animate); const dt = Math.min(clock.getDelta(), 0.1);
             if (state.isPlaying) {
-                const turnSpeed = state.sensitivity * 2 * dt;
-                if (state.keys['arrowleft']) state.yaw += turnSpeed;
-                if (state.keys['arrowright']) state.yaw -= turnSpeed;
-                if (state.keys['arrowup']) state.pitch += turnSpeed;
-                if (state.keys['arrowdown']) state.pitch -= turnSpeed;
-
-                state.pitch = Math.max(-Math.PI/2.1, Math.min(Math.PI/2.1, state.pitch));
-                camera.rotation.set(state.pitch, state.yaw, 0, 'YXZ');
-
-                const dir = new THREE.Vector3();
-                if (state.keys['w']) dir.z -= 1; 
-                if (state.keys['s']) dir.z += 1; 
-                if (state.keys['a']) dir.x -= 1; 
-                if (state.keys['d']) dir.x += 1; 
-                dir.normalize();
-                dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), state.yaw);
-
-                state.velocity.x = dir.x * config.moveSpeed;
-                state.velocity.z = dir.z * config.moveSpeed;
-
-                if (state.keys[' '] && state.canJump) {
-                    state.velocity.y = config.jumpForce;
-                    state.canJump = false;
-                }
-
+                const ts = state.sensitivity * 2 * dt;
+                if (state.keys['arrowleft']) state.yaw += ts; if (state.keys['arrowright']) state.yaw -= ts;
+                if (state.keys['arrowup']) state.pitch += ts; if (state.keys['arrowdown']) state.pitch -= ts;
+                state.pitch = Math.max(-1.5, Math.min(1.5, state.pitch)); camera.rotation.set(state.pitch, state.yaw, 0, 'YXZ');
+                const d = new THREE.Vector3();
+                if (state.keys['w']) d.z -= 1; if (state.keys['s']) d.z += 1; if (state.keys['a']) d.x -= 1; if (state.keys['d']) d.x += 1;
+                d.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), state.yaw);
+                state.velocity.x = d.x * config.moveSpeed; state.velocity.z = d.z * config.moveSpeed;
+                if (state.keys[' '] && state.canJump) { state.velocity.y = config.jumpForce; state.canJump = false; }
                 state.velocity.y += config.gravity * dt;
-
-                const nextPos = camera.position.clone();
-                state.canJump = false;
-
-                nextPos.y += state.velocity.y * dt;
-                checkCollisions(nextPos, 'y');
-                camera.position.y = nextPos.y;
-
-                nextPos.x += state.velocity.x * dt;
-                checkCollisions(nextPos, 'x');
-                camera.position.x = nextPos.x;
-
-                nextPos.z += state.velocity.z * dt;
-                checkCollisions(nextPos, 'z');
-                camera.position.z = nextPos.z;
-
-                // Animate and collect coins
+                const next = camera.position.clone(); state.canJump = false;
+                next.y += state.velocity.y * dt; checkCollisions(next, 'y'); camera.position.y = next.y;
+                next.x += state.velocity.x * dt; checkCollisions(next, 'x'); camera.position.x = next.x;
+                next.z += state.velocity.z * dt; checkCollisions(next, 'z'); camera.position.z = next.z;
+                
                 collectibles.forEach(c => {
                     if (c.active) {
-                        c.mesh.rotation.y += dt * 3;
-                        c.mesh.rotation.x += dt * 2;
-                        c.mesh.position.y = c.startY + Math.sin(Date.now() * 0.005) * 0.2; // bobbing
-
-                        // If player is close enough, collect the coin
-                        if (camera.position.distanceTo(c.mesh.position) < 1.5) {
-                            c.active = false;
-                            c.mesh.visible = false;
-                            
-                            state.currentScore += 100;
-                            state.totalCoins += 1;
-                            
-                            if (state.currentScore > state.highScore) {
-                                state.highScore = state.currentScore;
-                            }
-                            
-                            saveData(); // Save instantly
-                            updateHUDStats();
+                        c.mesh.rotation.y += dt * 3; c.mesh.position.y = c.startY + Math.sin(Date.now()*0.005)*0.2;
+                        if (camera.position.distanceTo(c.mesh.position) < 1.2) {
+                            c.active = false; c.mesh.visible = false; state.currentScore += 100; state.totalCoins += 1;
+                            if (state.currentScore > state.highScore) state.highScore = state.currentScore;
+                            saveData(); updateHUDStats();
                         }
                     }
                 });
+                if (camera.position.y < -10) { state.currentScore = 0; updateHUDStats(); collectibles.forEach(c=>{c.active=true;c.mesh.visible=true;}); camera.position.set(0,5,0); state.velocity.set(0,0,0); }
 
-                // Fall off edge (Death)
-                if (camera.position.y < -10) {
-                    resetRun(); // Sends back to start, resets score, respawns coins
-                }
-
+                // Optimized Networking: Only send if moved or timed out
                 if (connections.length > 0 && peer) {
                     const now = Date.now();
-                    if (now - state.lastNetSend > 40) { 
-                        broadcast({
-                            type: 'state',
-                            id: peer.id,
-                            name: state.playerName,
-                            color: state.equippedColor,
-                            x: camera.position.x,
-                            y: camera.position.y,
-                            z: camera.position.z,
-                            yaw: state.yaw
-                        });
-                        state.lastNetSend = now;
+                    const moved = camera.position.distanceTo(state.lastSentPos) > 0.05 || Math.abs(state.yaw - state.lastSentYaw) > 0.05;
+                    if (now - state.lastNetSend > 50 && moved) {
+                        broadcast({ type: 'state', id: peer.id, name: state.playerName, color: state.equippedColor, x: camera.position.x, y: camera.position.y, z: camera.position.z, yaw: state.yaw });
+                        state.lastNetSend = now; state.lastSentPos.copy(camera.position); state.lastSentYaw = state.yaw;
                     }
                 }
             }
 
-            // Render other players
             for(let id in otherPlayers) {
-                const p = otherPlayers[id];
-                
-                const dist = Math.hypot(p.targetPos.x - p.mesh.position.x, p.targetPos.z - p.mesh.position.z);
-                
-                p.mesh.position.lerp(p.targetPos, 0.2);
-                p.mesh.rotation.y += (p.targetYaw - p.mesh.rotation.y) * 0.2;
-
+                const p = otherPlayers[id]; const dist = Math.hypot(p.targetPos.x - p.mesh.position.x, p.targetPos.z - p.mesh.position.z);
+                p.mesh.position.lerp(p.targetPos, 0.15); p.mesh.rotation.y += (p.targetYaw - p.mesh.rotation.y) * 0.15;
                 const ud = p.mesh.userData;
-                
-                if (dist > 0.02) {
-                    ud.roll -= dist * 3;
-                    ud.innerCube.rotation.x = ud.roll;
-                } else {
-                    ud.innerCube.rotation.x += (0 - ud.innerCube.rotation.x) * 0.2;
-                    ud.roll = ud.innerCube.rotation.x;
-                }
-
+                if (dist > 0.02) { ud.roll -= dist * 3; ud.innerCube.rotation.x = ud.roll; }
                 const dy = p.mesh.position.y - ud.lastY;
-                if (dy > 0.05) {
-                    ud.innerCube.scale.lerp(new THREE.Vector3(0.8, 1.4, 0.8), 0.3);
-                } else if (dy < -0.05) {
-                    ud.innerCube.scale.lerp(new THREE.Vector3(0.9, 1.2, 0.9), 0.3);
-                } else {
-                    ud.innerCube.scale.lerp(new THREE.Vector3(1, 1, 1), 0.3);
-                }
-                
+                if (Math.abs(dy) > 0.05) ud.innerCube.scale.lerp(new THREE.Vector3(0.8, 1.3, 0.8), 0.2);
+                else ud.innerCube.scale.lerp(new THREE.Vector3(1, 1, 1), 0.2);
                 ud.lastY = p.mesh.position.y;
-
                 if (p.nameTag) {
-                    const screenPos = p.mesh.position.clone();
-                    screenPos.y += 0.8; 
-                    screenPos.project(camera);
-
-                    if (screenPos.z > 1) {
-                        p.nameTag.style.opacity = 0; 
-                    } else {
-                        p.nameTag.style.opacity = 1;
-                        const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
-                        const y = (screenPos.y * -0.5 + 0.5) * window.innerHeight;
-                        p.nameTag.style.left = `${x}px`;
-                        p.nameTag.style.top = `${y}px`;
-                    }
+                    const sp = p.mesh.position.clone(); sp.y += 0.8; sp.project(camera);
+                    if (sp.z > 1) p.nameTag.style.display = 'none';
+                    else { p.nameTag.style.display = 'block'; p.nameTag.style.left = `${(sp.x*0.5+0.5)*window.innerWidth}px`; p.nameTag.style.top = `${(sp.y*-0.5+0.5)*window.innerHeight}px`; }
                 }
             }
-
             renderer.render(scene, camera);
         }
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        function showMenu(id) {
+            ['menu-login', 'menu-home', 'menu-multi', 'menu-shop'].forEach(m => document.getElementById(m).classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden'); if(id !== 'menu-shop') document.getElementById(id).classList.add('flex');
+        }
+        function startGame(m) { document.getElementById('ui-layer').classList.add('hidden'); document.getElementById('hud').classList.remove('hidden'); state.isPlaying = true; if(m==='multi'){document.getElementById('peer-id-display').classList.remove('hidden');document.getElementById('leaderboard').classList.remove('hidden');updateLeaderboard();}}
+        function pauseGame() { state.isPlaying = false; document.getElementById('pause-menu').classList.remove('hidden'); document.getElementById('pause-menu').classList.add('flex'); }
+        function resumeGame() { state.isPlaying = true; document.getElementById('pause-menu').classList.add('hidden'); state.keys = {}; }
+        function quitGame() { location.reload(); } // Safest cleanup
 
-        // Initialize display to show Login screen first
-        document.getElementById('menu-home').classList.remove('flex');
-        document.getElementById('menu-home').classList.add('hidden');
-
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') pauseGame(); if(state.isPlaying) state.keys[e.key.toLowerCase()] = true; });
+        window.addEventListener('keyup', (e) => { state.keys[e.key.toLowerCase()] = false; });
+        document.getElementById('sensitivity-slider').addEventListener('input', (e) => { state.sensitivity = parseFloat(e.target.value); saveData(); });
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
         animate();
     </script>
 </body>
